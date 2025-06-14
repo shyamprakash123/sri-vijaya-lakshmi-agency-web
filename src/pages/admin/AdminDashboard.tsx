@@ -26,6 +26,7 @@ import BannerModal from '../../components/admin/BannerModal';
 import AnnouncementModal from '../../components/admin/AnnouncementModal';
 import CouponModal from '../../components/admin/CouponModal';
 import CategoryModal from '../../components/admin/CategoryModal';
+import OrderDetailsModal from '../../components/admin/OrderDetailsModal';
 
 const AdminDashboard: React.FC = () => {
   const {
@@ -68,6 +69,7 @@ const AdminDashboard: React.FC = () => {
   const [announcementModal, setAnnouncementModal] = useState({ isOpen: false, announcement: null });
   const [couponModal, setCouponModal] = useState({ isOpen: false, coupon: null });
   const [categoryModal, setCategoryModal] = useState({ isOpen: false, category: null });
+  const [orderDetailsModal, setOrderDetailsModal] = useState({ isOpen: false, order: null });
   const [actionLoading, setActionLoading] = useState(false);
 
   const tabs = [
@@ -253,7 +255,7 @@ const AdminDashboard: React.FC = () => {
               {orders
                 .filter(order => selectedStatus === 'all' || order.order_status === selectedStatus)
                 .map((order) => (
-                <tr key={order.id}>
+                <tr key={order.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     #{order.id.slice(0, 8)}
                   </td>
@@ -261,7 +263,7 @@ const AdminDashboard: React.FC = () => {
                     {order.user_id ? 'Registered User' : 'Guest'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ₹{order.total_amount}
+                    ₹{order.total_amount.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -273,27 +275,44 @@ const AdminDashboard: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {order.order_type}
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                      order.order_type === 'preorder' ? 'bg-purple-100 text-purple-800' : 'bg-orange-100 text-orange-800'
+                    }`}>
+                      {order.order_type}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {order.transportation_required ? `₹${order.transportation_amount}` : 'No'}
+                    {order.transportation_required ? (
+                      <span className="text-green-600 font-medium">₹{order.transportation_amount}</span>
+                    ) : (
+                      <span className="text-gray-400">No</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(order.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <select
-                      value={order.order_status}
-                      onChange={(e) => handleAction(() => updateOrderStatus(order.id, e.target.value))}
-                      className="text-sm border border-gray-300 rounded px-2 py-1"
-                      disabled={actionLoading}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="prepaid">Prepaid</option>
-                      <option value="fully_paid">Fully Paid</option>
-                      <option value="dispatched">Dispatched</option>
-                      <option value="delivered">Delivered</option>
-                    </select>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => setOrderDetailsModal({ isOpen: true, order })}
+                        className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors"
+                        title="View Details"
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <select
+                        value={order.order_status}
+                        onChange={(e) => handleAction(() => updateOrderStatus(order.id, e.target.value))}
+                        className="text-sm border border-gray-300 rounded px-2 py-1 min-w-[120px]"
+                        disabled={actionLoading}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="prepaid">Prepaid</option>
+                        <option value="fully_paid">Fully Paid</option>
+                        <option value="dispatched">Dispatched</option>
+                        <option value="delivered">Delivered</option>
+                      </select>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -748,6 +767,12 @@ const AdminDashboard: React.FC = () => {
         }
         category={categoryModal.category}
         loading={actionLoading}
+      />
+
+      <OrderDetailsModal
+        isOpen={orderDetailsModal.isOpen}
+        onClose={() => setOrderDetailsModal({ isOpen: false, order: null })}
+        order={orderDetailsModal.order}
       />
     </div>
   );
