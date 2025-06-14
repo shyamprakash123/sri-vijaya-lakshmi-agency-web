@@ -37,7 +37,20 @@ export const useAdmin = () => {
 
   useEffect(() => {
     fetchAdminData();
-    setupRealtimeSubscriptions();
+    const channel = supabase
+    .channel('orders_changes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'orders' },
+      () => {
+        fetchAdminData();
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel); // Clean up on unmount
+  };
   }, []);
 
   const fetchAdminData = async () => {
@@ -119,20 +132,8 @@ export const useAdmin = () => {
       )
       .subscribe();
 
-    // Subscribe to products changes
-    const productsSubscription = supabase
-      .channel('products_changes')
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'products' },
-        () => {
-          fetchAdminData();
-        }
-      )
-      .subscribe();
-
     return () => {
       ordersSubscription.unsubscribe();
-      productsSubscription.unsubscribe();
     };
   };
 
