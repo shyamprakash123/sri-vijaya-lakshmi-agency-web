@@ -42,6 +42,8 @@ export interface Order {
   created_at: string;
   updated_at: string;
   scheduled_delivery?: string;
+  transportation_required?: boolean;
+  transportation_amount?: number;
   order_items?: OrderItem[];
 }
 
@@ -86,6 +88,18 @@ export interface Coupon {
   is_active: boolean;
   valid_until: string;
   created_at: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  image?: string;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface SearchFilters {

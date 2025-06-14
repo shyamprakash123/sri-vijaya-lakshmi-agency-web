@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, CreditCard, Package, Clock, Loader2, AlertTriangle } from 'lucide-react';
+import { MapPin, CreditCard, Package, Clock, Loader2, AlertTriangle, Truck, Store } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
 import { useOrders } from '../hooks/useOrders';
 import { useCoupons } from '../hooks/useCoupons';
@@ -21,6 +21,7 @@ const CheckoutPage: React.FC = () => {
   const [gstNumber, setGstNumber] = useState('');
   const [orderType, setOrderType] = useState<'instant' | 'preorder'>('instant');
   const [scheduledDelivery, setScheduledDelivery] = useState('');
+  const [transportationRequired, setTransportationRequired] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [discount, setDiscount] = useState(0);
@@ -28,7 +29,8 @@ const CheckoutPage: React.FC = () => {
   const [stockErrors, setStockErrors] = useState<string[]>([]);
 
   const subtotal = getTotalAmount();
-  const finalAmount = subtotal - discount;
+  const transportationAmount = transportationRequired ? 50 : 0; // ₹50 transportation fee
+  const finalAmount = subtotal + transportationAmount - discount;
 
   // Check stock availability for all cart items
   const checkStockAvailability = () => {
@@ -105,7 +107,9 @@ const CheckoutPage: React.FC = () => {
         deliveryAddress,
         orderType,
         gstNumber || undefined,
-        scheduledDelivery || undefined
+        scheduledDelivery || undefined,
+        transportationRequired,
+        transportationAmount
       );
 
       // Clear cart and redirect to order confirmation
@@ -166,33 +170,45 @@ const CheckoutPage: React.FC = () => {
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Order Summary</h2>
             <div className="space-y-4">
-              {cartItems.map((item) => (
-                <div key={item.product.id} className="flex items-center space-x-4 py-3 border-b border-gray-200 last:border-b-0">
-                  <img
-                    src={item.product.image}
-                    alt={item.product.name}
-                    className="w-16 h-16 object-cover rounded-lg"
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-800">{item.product.name}</h3>
-                    <p className="text-sm text-gray-600">{item.product.weight} • {item.selectedSlab.label}</p>
-                    <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
-                    {item.quantity > item.product.available_quantity && (
-                      <p className="text-xs text-red-500">
-                        ⚠️ Only {item.product.available_quantity} available
+              {cartItems.map((item) => {
+                const isInStock = item.product.available_quantity > 0;
+                return (
+                  <div key={item.product.id} className="flex items-center space-x-4 py-3 border-b border-gray-200 last:border-b-0">
+                    <img
+                      src={item.product.image}
+                      alt={item.product.name}
+                      className="w-16 h-16 object-cover rounded-lg"
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-800">{item.product.name}</h3>
+                      <p className="text-sm text-gray-600">{item.product.weight} • {item.selectedSlab.label}</p>
+                      <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          isInStock 
+                            ? 'bg-green-100 text-green-700' 
+                            : 'bg-red-100 text-red-700'
+                        }`}>
+                          {isInStock ? 'In Stock' : 'Out of Stock'}
+                        </span>
+                        {item.quantity > item.product.available_quantity && (
+                          <span className="text-xs text-red-500">
+                            ⚠️ Only {item.product.available_quantity} available
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-gray-800">
+                        ₹{item.selectedSlab.price_per_bag * item.quantity}
                       </p>
-                    )}
+                      <p className="text-sm text-gray-500">
+                        ₹{item.selectedSlab.price_per_bag}/bag
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-800">
-                      ₹{item.selectedSlab.price_per_bag * item.quantity}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      ₹{item.selectedSlab.price_per_bag}/bag
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -220,6 +236,42 @@ const CheckoutPage: React.FC = () => {
             />
             {errors.address && <p className="text-red-500 text-sm mt-2">{errors.address}</p>}
             {errors.pincode && <p className="text-red-500 text-sm mt-2">{errors.pincode}</p>}
+          </div>
+
+          {/* Transportation Option */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+              <Truck size={20} className="mr-2" />
+              Transportation
+            </h2>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  id="transportation"
+                  checked={transportationRequired}
+                  onChange={(e) => setTransportationRequired(e.target.checked)}
+                  className="w-4 h-4 text-orange-500"
+                />
+                <label htmlFor="transportation" className="flex-1">
+                  <div className="font-medium">Transportation Required (+₹50)</div>
+                  <div className="text-sm text-gray-600">
+                    Check this if you need transportation assistance for heavy orders
+                  </div>
+                </label>
+              </div>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Store size={16} className="text-blue-500" />
+                  <h4 className="font-semibold text-blue-800">Store Pickup Available</h4>
+                </div>
+                <p className="text-sm text-blue-700">
+                  Visit our store at 123 Rice Market Street, Chennai. 
+                  POS machine available - All cards accepted.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Order Type */}
@@ -326,6 +378,13 @@ const CheckoutPage: React.FC = () => {
                 <span className="text-gray-600">Subtotal</span>
                 <span className="font-medium">₹{subtotal}</span>
               </div>
+              
+              {transportationRequired && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Transportation</span>
+                  <span className="font-medium">₹{transportationAmount}</span>
+                </div>
+              )}
               
               {discount > 0 && (
                 <div className="flex justify-between text-green-600">

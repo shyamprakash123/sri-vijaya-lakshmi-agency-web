@@ -190,6 +190,8 @@ export const orderService = {
     payment_hash: string;
     upi_link: string;
     scheduled_delivery?: string;
+    transportation_required?: boolean;
+    transportation_amount?: number;
     items: Array<{
       product_id: string;
       quantity: number;
@@ -430,29 +432,48 @@ export const announcementService = {
   }
 };
 
-// Category service (mock implementation for now)
+// Category service
 export const categoryService = {
   async getAll() {
-    // Mock categories based on existing product categories
-    return [
-      { id: '1', name: 'Basmati Rice', slug: 'basmati', description: 'Premium long-grain basmati rice', is_active: true, sort_order: 1 },
-      { id: '2', name: 'Regular Rice', slug: 'regular', description: 'Everyday rice varieties', is_active: true, sort_order: 2 },
-      { id: '3', name: 'Premium Rice', slug: 'premium', description: 'High-quality premium rice', is_active: true, sort_order: 3 }
-    ];
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order');
+
+    if (error) throw error;
+    return data;
   },
 
   async create(category: any) {
-    // Mock implementation - in real app, this would create in database
-    return { ...category, id: Date.now().toString() };
+    const { data, error } = await supabase
+      .from('categories')
+      .insert(category)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
   },
 
   async update(id: string, updates: any) {
-    // Mock implementation
-    return { id, ...updates };
+    const { data, error } = await supabase
+      .from('categories')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
   },
 
   async delete(id: string) {
-    // Mock implementation
-    return true;
+    const { error } = await supabase
+      .from('categories')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
   }
 };

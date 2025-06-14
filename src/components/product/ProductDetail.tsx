@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShoppingCart, MessageCircle, Package, Truck, Shield, Loader2, AlertCircle, Store } from 'lucide-react';
+import { ShoppingCart, MessageCircle, Package, Truck, Shield, Loader2, AlertCircle, Store, MapPin, CreditCard } from 'lucide-react';
 import { useProduct } from '../../hooks/useProducts';
 import { useCart } from '../../hooks/useCart';
 import { PriceSlab } from '../../types';
@@ -53,6 +53,8 @@ const ProductDetail: React.FC = () => {
     return `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
   };
 
+  const isInStock = product && product.available_quantity > 0;
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-12">
@@ -86,12 +88,22 @@ const ProductDetail: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* Product Image */}
         <div className="space-y-4">
-          <div className="aspect-square rounded-xl overflow-hidden shadow-lg">
+          <div className="aspect-square rounded-xl overflow-hidden shadow-lg relative">
             <img
               src={product.image}
               alt={product.name}
               className="w-full h-full object-cover"
             />
+            {/* Stock Status Badge */}
+            <div className="absolute top-4 right-4">
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                isInStock 
+                  ? 'bg-green-500 text-white' 
+                  : 'bg-red-500 text-white'
+              }`}>
+                {isInStock ? 'In Stock' : 'Out of Stock'}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -112,10 +124,12 @@ const ProductDetail: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <Shield size={20} className="text-green-500" />
+              <Shield size={20} className={isInStock ? "text-green-500" : "text-red-500"} />
               <div>
-                <p className="text-sm text-gray-500">Available</p>
-                <p className="font-semibold">{product.available_quantity} bags</p>
+                <p className="text-sm text-gray-500">Status</p>
+                <p className={`font-semibold ${isInStock ? 'text-green-600' : 'text-red-600'}`}>
+                  {isInStock ? 'In Stock' : 'Out of Stock'}
+                </p>
               </div>
             </div>
           </div>
@@ -156,6 +170,7 @@ const ProductDetail: React.FC = () => {
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 className="bg-gray-200 hover:bg-gray-300 text-gray-800 w-10 h-10 rounded-lg font-semibold"
+                disabled={!isInStock}
               >
                 -
               </button>
@@ -166,10 +181,12 @@ const ProductDetail: React.FC = () => {
                 className="w-20 text-center py-2 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                 min="1"
                 max={product.available_quantity}
+                disabled={!isInStock}
               />
               <button
                 onClick={() => setQuantity(Math.min(product.available_quantity, quantity + 1))}
                 className="bg-gray-200 hover:bg-gray-300 text-gray-800 w-10 h-10 rounded-lg font-semibold"
+                disabled={!isInStock}
               >
                 +
               </button>
@@ -199,7 +216,7 @@ const ProductDetail: React.FC = () => {
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={handleAddToCart}
-                disabled={!selectedSlab || product.available_quantity === 0}
+                disabled={!selectedSlab || !isInStock}
                 className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2"
               >
                 <ShoppingCart size={20} />
@@ -208,7 +225,7 @@ const ProductDetail: React.FC = () => {
               
               <button
                 onClick={handleBuyNow}
-                disabled={!selectedSlab || product.available_quantity === 0}
+                disabled={!selectedSlab || !isInStock}
                 className="bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2"
               >
                 <Store size={20} />
@@ -227,16 +244,74 @@ const ProductDetail: React.FC = () => {
             </a>
           </div>
 
-          {/* Delivery Info */}
+          {/* Store Information */}
           <div className="p-4 bg-blue-50 rounded-lg">
-            <div className="flex items-center space-x-2 mb-2">
-              <Truck size={20} className="text-blue-500" />
-              <h4 className="font-semibold text-blue-800">Delivery Information</h4>
+            <div className="flex items-center space-x-2 mb-3">
+              <Store size={20} className="text-blue-500" />
+              <h4 className="font-semibold text-blue-800">Visit Our Store</h4>
             </div>
-            <p className="text-sm text-blue-700">
+            <div className="space-y-2 text-sm text-blue-700">
+              <div className="flex items-center space-x-2">
+                <MapPin size={16} />
+                <span>123 Rice Market Street, Chennai, Tamil Nadu 600001</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <CreditCard size={16} />
+                <span>POS machine available - All cards accepted</span>
+              </div>
+              <p>📍 Physical store open for walk-in customers</p>
+              <p>🚗 Free parking available</p>
+            </div>
+          </div>
+
+          {/* Delivery Info */}
+          <div className="p-4 bg-green-50 rounded-lg">
+            <div className="flex items-center space-x-2 mb-2">
+              <Truck size={20} className="text-green-500" />
+              <h4 className="font-semibold text-green-800">Delivery Information</h4>
+            </div>
+            <p className="text-sm text-green-700">
               📦 Delivery handled by Porter within 1 hour for instant orders, 
               and as per selected slot for pre-orders.
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Store Location Map */}
+      <div className="mt-12">
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <MapPin size={24} className="mr-2 text-orange-500" />
+            Store Location
+          </h3>
+          
+          {/* Map Placeholder - Replace with actual map integration */}
+          <div className="bg-gray-200 rounded-lg h-64 flex items-center justify-center mb-4">
+            <div className="text-center">
+              <MapPin size={48} className="text-gray-400 mx-auto mb-2" />
+              <p className="text-gray-500 font-medium">Sri Vijaya Lakshmi Agency</p>
+              <p className="text-sm text-gray-400">123 Rice Market Street, Chennai</p>
+              <p className="text-sm text-gray-400">Tamil Nadu 600001</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <div className="p-4 bg-orange-50 rounded-lg">
+              <h4 className="font-semibold text-orange-800 mb-2">Store Hours</h4>
+              <p className="text-sm text-orange-700">Mon - Sat: 6:00 AM - 10:00 PM</p>
+              <p className="text-sm text-orange-700">Sunday: 7:00 AM - 9:00 PM</p>
+            </div>
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <h4 className="font-semibold text-blue-800 mb-2">Contact</h4>
+              <p className="text-sm text-blue-700">📞 +91 98765 43210</p>
+              <p className="text-sm text-blue-700">📧 info@svlrice.com</p>
+            </div>
+            <div className="p-4 bg-green-50 rounded-lg">
+              <h4 className="font-semibold text-green-800 mb-2">Facilities</h4>
+              <p className="text-sm text-green-700">🚗 Free Parking</p>
+              <p className="text-sm text-green-700">💳 Card Payments</p>
+            </div>
           </div>
         </div>
       </div>
