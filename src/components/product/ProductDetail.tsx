@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ShoppingCart, MessageCircle, Package, Truck, Shield, Loader2, AlertCircle, Store } from 'lucide-react';
 import { useProduct } from '../../hooks/useProducts';
 import { useCart } from '../../hooks/useCart';
-import { useToast } from '../../hooks/useToast';
 import { PriceSlab } from '../../types';
+import toast from 'react-hot-toast';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,7 +13,6 @@ const ProductDetail: React.FC = () => {
   const [selectedSlab, setSelectedSlab] = useState<PriceSlab | null>(null);
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
-  const { success } = useToast();
 
   useEffect(() => {
     if (product && product.price_slabs && product.price_slabs.length > 0) {
@@ -37,7 +36,6 @@ const ProductDetail: React.FC = () => {
   const handleAddToCart = () => {
     if (product && selectedSlab) {
       addToCart(product, quantity, selectedSlab);
-      success('Added to Cart', `${quantity} bags of ${product.name} added to your cart`);
     }
   };
 

@@ -1,112 +1,202 @@
-import { useState, useEffect } from 'react';
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import toast from 'react-hot-toast';
 import { CartItem, Product, PriceSlab } from '../types';
-import { useAuth } from './useAuth';
-import { cartService } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 
-export const useCart = () => {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const { user } = useAuth();
+interface CartStore {
+  cartItems: CartItem[];
+  addToCart: (product: Product, quantity: number, slab: PriceSlab) => void;
+  updateQuantity: (productId: string, quantity: number) => void;
+  removeFromCart: (productId: string) => void;
+  clearCart: () => void;
+  getTotalAmount: () => number;
+  getTotalItems: () => number;
+  syncWithDatabase: (userId: string) => Promise<void>;
+  loadFromDatabase: (userId: string) => Promise<void>;
+}
 
-  useEffect(() => {
-    const loadCart = async () => {
-      if (user) {
-        try {
-          const savedCart = await cartService.getCart(user.id);
-          setCartItems(savedCart);
-        } catch (error) {
-          console.error('Failed to load cart from server:', error);
-          // Fallback to localStorage
-          const localCart = localStorage.getItem('cart');
-          if (localCart) {
-            setCartItems(JSON.parse(localCart));
+export const useCart = create<CartStore>()(
+  persist(
+    (set, get) => ({
+      cartItems: [],
+
+      addToCart: (product: Product, quantity = 1, slab: PriceSlab) => {
+        const { cartItems } = get();
+        
+        const existingItem = cartItems.find(item => item.product.id === product.id);
+
+        if (existingItem) {
+          const newQuantity = existingItem.quantity + quantity;
+          
+          if (newQuantity > product.available_quantity) {
+            toast.error(`Only ${product.available_quantity} bags available for ${product.name}`);
+            return;
           }
-        }
-      } else {
-        // Load from localStorage for non-authenticated users
-        const savedCart = localStorage.getItem('cart');
-        if (savedCart) {
-          setCartItems(JSON.parse(savedCart));
-        }
-      }
-    };
 
-    loadCart();
-  }, [user]);
+          if (newQuantity > 50) {
+            toast.error('Maximum 50 bags per product allowed');
+            return;
+          }
 
-  useEffect(() => {
-    const saveCart = async () => {
-      if (user) {
+          set({
+            cartItems: cartItems.map(item =>
+              item.product.id === product.id
+                ? { ...item, quantity: newQuantity, selectedSlab: slab }
+                : item
+            ),
+          });
+          
+          toast.success(`Updated ${product.name} quantity in cart`);
+        } else {
+          if (quantity > product.available_quantity) {
+            toast.error(`Only ${product.available_quantity} bags available for ${product.name}`);
+            return;
+          }
+
+          set({
+            cartItems: [...cartItems, { product, quantity, selectedSlab: slab }],
+          });
+          
+          toast.success(`Added ${product.name} to cart`);
+        }
+
+        // Sync with database if user is logged in
+        supabase.auth.getSession().then(({ data }) => {
+          const user = data.session?.user;
+          if (user) {
+            get().syncWithDatabase(user.id);
+          }
+        });
+      },
+
+      updateQuantity: (productId: string, quantity: number) => {
+        const { cartItems } = get();
+
+        if (quantity <= 0) {
+          get().removeFromCart(productId);
+          return;
+        }
+
+        const item = cartItems.find(item => item.product.id === productId);
+        if (!item) return;
+
+        if (quantity > item.product.available_quantity) {
+          toast.error(`Only ${item.product.available_quantity} bags available for ${item.product.name}`);
+          return;
+        }
+
+        if (quantity > 50) {
+          toast.error('Maximum 50 bags per product allowed');
+          return;
+        }
+
+        set({
+          cartItems: cartItems.map(item =>
+            item.product.id === productId
+              ? { ...item, quantity }
+              : item
+          ),
+        });
+
+        // Sync with database if user is logged in
+        supabase.auth.getSession().then(({ data }) => {
+          const user = data.session?.user;
+          if (user) {
+            get().syncWithDatabase(user.id);
+          }
+        });
+      },
+
+      removeFromCart: (productId: string) => {
+        const { cartItems } = get();
+        const itemToRemove = cartItems.find(item => item.product.id === productId);
+
+        if (itemToRemove) {
+          set({
+            cartItems: cartItems.filter(item => item.product.id !== productId),
+          });
+          
+          toast.success(`Removed ${itemToRemove.product.name} from cart`);
+
+          // Sync with database if user is logged in
+          supabase.auth.getSession().then(({ data }) => {
+            const user = data.session?.user;
+            if (user) {
+              get().syncWithDatabase(user.id);
+            }
+          });
+        }
+      },
+
+      clearCart: () => {
+        set({ cartItems: [] });
+        
+        // Sync with database if user is logged in
+        supabase.auth.getSession().then(({ data }) => {
+          const user = data.session?.user;
+          if (user) {
+            get().syncWithDatabase(user.id);
+          }
+        });
+      },
+
+      getTotalAmount: () => {
+        const { cartItems } = get();
+        return cartItems.reduce((total, item) => {
+          return total + (item.selectedSlab.price_per_bag * item.quantity);
+        }, 0);
+      },
+
+      getTotalItems: () => {
+        const { cartItems } = get();
+        return cartItems.reduce((total, item) => total + item.quantity, 0);
+      },
+
+      syncWithDatabase: async (userId: string) => {
+        const { cartItems } = get();
+
         try {
-          await cartService.saveCart(user.id, cartItems);
+          // Clear existing cart items for the user
+          await supabase
+            .from('user_sessions')
+            .upsert({
+              user_id: userId,
+              cart_data: cartItems.map(item => ({
+                product: item.product,
+                quantity: item.quantity,
+                selectedSlab: item.selectedSlab
+              }))
+            });
         } catch (error) {
-          console.error('Failed to save cart to server:', error);
+          console.error('Error syncing cart with database:', error);
         }
-      }
-      // Always save to localStorage as backup
-      localStorage.setItem('cart', JSON.stringify(cartItems));
-    };
+      },
 
-    saveCart();
-  }, [cartItems, user]);
+      loadFromDatabase: async (userId: string) => {
+        try {
+          const { data, error } = await supabase
+            .from('user_sessions')
+            .select('cart_data')
+            .eq('user_id', userId)
+            .single();
 
-  const addToCart = (product: Product, quantity: number, slab: PriceSlab) => {
-    setCartItems(prev => {
-      const existingItem = prev.find(item => item.product.id === product.id);
-      if (existingItem) {
-        return prev.map(item =>
-          item.product.id === product.id
-            ? { ...item, quantity: item.quantity + quantity, selectedSlab: slab }
-            : item
-        );
-      }
-      return [...prev, { product, quantity, selectedSlab: slab }];
-    });
-  };
+          if (error && error.code !== 'PGRST116') {
+            console.error('Error loading cart from database:', error);
+            return;
+          }
 
-  const updateQuantity = (productId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(productId);
-      return;
+          if (data?.cart_data && Array.isArray(data.cart_data)) {
+            set({ cartItems: data.cart_data });
+          }
+        } catch (error) {
+          console.error('Error loading cart from database:', error);
+        }
+      },
+    }),
+    {
+      name: 'svl-cart-storage',
+      partialize: (state) => ({ cartItems: state.cartItems }),
     }
-    setCartItems(prev =>
-      prev.map(item =>
-        item.product.id === productId ? { ...item, quantity } : item
-      )
-    );
-  };
-
-  const removeFromCart = (productId: string) => {
-    setCartItems(prev => prev.filter(item => item.product.id !== productId));
-  };
-
-  const clearCart = async () => {
-    setCartItems([]);
-    if (user) {
-      try {
-        await cartService.clearCart(user.id);
-      } catch (error) {
-        console.error('Failed to clear cart on server:', error);
-      }
-    }
-  };
-
-  const getTotalAmount = () => {
-    return cartItems.reduce((total, item) => {
-      return total + (item.selectedSlab.price_per_bag * item.quantity);
-    }, 0);
-  };
-
-  const getTotalItems = () => {
-    return cartItems.reduce((total, item) => total + item.quantity, 0);
-  };
-
-  return {
-    cartItems,
-    addToCart,
-    updateQuantity,
-    removeFromCart,
-    clearCart,
-    getTotalAmount,
-    getTotalItems
-  };
-};
+  )
+);

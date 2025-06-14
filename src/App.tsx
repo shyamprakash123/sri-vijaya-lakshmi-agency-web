@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import AnnouncementBar from './components/layout/AnnouncementBar';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
@@ -13,12 +14,8 @@ import PreOrderPage from './pages/PreOrderPage';
 import TrackOrderPage from './pages/TrackOrderPage';
 import ContactPage from './pages/ContactPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
-import Toast from './components/ui/Toast';
-import { useToast } from './hooks/useToast';
 
 function App() {
-  const { toasts } = useToast();
-
   return (
     <Router>
       <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -42,11 +39,26 @@ function App() {
         <Footer />
         
         {/* Toast Container */}
-        <div className="fixed top-4 right-4 z-50 space-y-2">
-          {toasts.map(toast => (
-            <Toast key={toast.id} {...toast} />
-          ))}
-        </div>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#363636',
+              color: '#fff',
+            },
+            success: {
+              style: {
+                background: '#10B981',
+              },
+            },
+            error: {
+              style: {
+                background: '#EF4444',
+              },
+            },
+          }}
+        />
       </div>
     </Router>
   );

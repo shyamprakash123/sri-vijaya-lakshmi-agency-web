@@ -61,7 +61,7 @@ const CartPage: React.FC = () => {
                       {item.selectedSlab.label}
                     </span>
                     <span className="text-sm font-medium text-orange-500">
-                      ₹{item.selectedSlab.pricePerBag}/bag
+                      ₹{item.selectedSlab.price_per_bag}/bag
                     </span>
                   </div>
                   
@@ -85,7 +85,7 @@ const CartPage: React.FC = () => {
 
                 <div className="text-right">
                   <p className="text-lg font-bold text-gray-800 mb-2">
-                    ₹{item.selectedSlab.pricePerBag * item.quantity}
+                    ₹{item.selectedSlab.price_per_bag * item.quantity}
                   </p>
                   <button
                     onClick={() => removeFromCart(item.product.id)}
@@ -111,7 +111,7 @@ const CartPage: React.FC = () => {
                     {item.product.name} × {item.quantity}
                   </span>
                   <span className="font-medium">
-                    ₹{item.selectedSlab.pricePerBag * item.quantity}
+                    ₹{item.selectedSlab.price_per_bag * item.quantity}
                   </span>
                 </div>
               ))}
