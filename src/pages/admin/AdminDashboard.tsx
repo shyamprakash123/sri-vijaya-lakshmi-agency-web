@@ -11,68 +11,155 @@ import {
   Eye,
   Edit,
   Trash2,
-  Plus
+  Plus,
+  RefreshCw,
+  Loader2,
+  CheckCircle,
+  Clock,
+  Truck,
+  X,
+  Megaphone,
+  Image as ImageIcon,
+  Search,
+  Filter
 } from 'lucide-react';
+import { useAdmin } from '../../hooks/useAdmin';
+import ProductModal from '../../components/admin/ProductModal';
+import AnnouncementModal from '../../components/admin/AnnouncementModal';
 
 const AdminDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const {
+    stats,
+    orders,
+    products,
+    banners,
+    announcements,
+    loading,
+    error,
+    updateOrderStatus,
+    updateProductStock,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    createAnnouncement,
+    updateAnnouncement,
+    deleteAnnouncement,
+    refreshData
+  } = useAdmin();
 
-  // Mock data
-  const stats = {
-    totalRevenue: 125000,
-    totalOrders: 342,
-    totalProducts: 24,
-    totalCustomers: 156,
-    revenueGrowth: 12.5,
-    orderGrowth: 8.3,
-    productGrowth: 4.2,
-    customerGrowth: 15.7
+  const [activeTab, setActiveTab] = useState('overview');
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  const handleUpdateOrderStatus = async (orderId: string, status: string) => {
+    try {
+      setActionLoading(orderId);
+      await updateOrderStatus(orderId, status);
+    } catch (error) {
+      console.error('Error updating order status:', error);
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const recentOrders = [
-    { id: 'SVL001', customer: 'Priya Sharma', amount: 2400, status: 'delivered', date: '2024-01-15' },
-    { id: 'SVL002', customer: 'Rajesh Kumar', amount: 1800, status: 'dispatched', date: '2024-01-15' },
-    { id: 'SVL003', customer: 'Meera Patel', amount: 3200, status: 'pending', date: '2024-01-14' },
-    { id: 'SVL004', customer: 'Arjun Singh', amount: 1500, status: 'confirmed', date: '2024-01-14' },
-    { id: 'SVL005', customer: 'Lakshmi Iyer', amount: 2800, status: 'delivered', date: '2024-01-13' }
-  ];
+  const handleUpdateStock = async (productId: string, quantity: number) => {
+    try {
+      setActionLoading(productId);
+      await updateProductStock(productId, quantity);
+    } catch (error) {
+      console.error('Error updating stock:', error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
-  const topProducts = [
-    { name: 'Premium Basmati Rice', sales: 45, revenue: 54000 },
-    { name: 'Sona Masoori Rice', sales: 38, revenue: 30400 },
-    { name: 'Jasmine Rice', sales: 32, revenue: 30400 },
-    { name: 'Brown Basmati Rice', sales: 28, revenue: 39200 },
-    { name: 'Ponni Rice', sales: 42, revenue: 29400 }
-  ];
+  const handleProductSave = async (productData: any) => {
+    try {
+      if (selectedProduct) {
+        await updateProduct(selectedProduct.id, productData);
+      } else {
+        await createProduct(productData);
+      }
+      setShowProductModal(false);
+      setSelectedProduct(null);
+    } catch (error) {
+      console.error('Error saving product:', error);
+      throw error;
+    }
+  };
+
+  const handleAnnouncementSave = async (announcementData: any) => {
+    try {
+      if (selectedAnnouncement) {
+        await updateAnnouncement(selectedAnnouncement.id, announcementData);
+      } else {
+        await createAnnouncement(announcementData);
+      }
+      setShowAnnouncementModal(false);
+      setSelectedAnnouncement(null);
+    } catch (error) {
+      console.error('Error saving announcement:', error);
+      throw error;
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Clock className="w-4 h-4 text-yellow-500" />;
+      case 'prepaid':
+      case 'fully_paid':
+        return <CheckCircle className="w-4 h-4 text-blue-500" />;
+      case 'dispatched':
+        return <Truck className="w-4 h-4 text-purple-500" />;
+      case 'delivered':
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
+      default:
+        return <Package className="w-4 h-4 text-gray-500" />;
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'delivered':
-        return 'text-green-600 bg-green-100';
-      case 'dispatched':
-        return 'text-blue-600 bg-blue-100';
-      case 'confirmed':
-        return 'text-purple-600 bg-purple-100';
       case 'pending':
         return 'text-yellow-600 bg-yellow-100';
+      case 'prepaid':
+      case 'fully_paid':
+        return 'text-blue-600 bg-blue-100';
+      case 'dispatched':
+        return 'text-purple-600 bg-purple-100';
+      case 'delivered':
+        return 'text-green-600 bg-green-100';
       default:
         return 'text-gray-600 bg-gray-100';
     }
   };
 
-  const StatCard = ({ title, value, growth, icon: Icon, color }: any) => (
-    <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+  const StatCard = ({ title, value, growth, icon: Icon, color, alert }: any) => (
+    <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow relative">
+      {alert && (
+        <div className="absolute top-2 right-2">
+          <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <p className="text-gray-600 text-sm font-medium">{title}</p>
           <p className="text-2xl font-bold text-gray-800 mt-1">{value}</p>
-          <div className="flex items-center mt-2">
-            <TrendingUp size={16} className={`${growth >= 0 ? 'text-green-500' : 'text-red-500'} mr-1`} />
-            <span className={`text-sm font-medium ${growth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {growth >= 0 ? '+' : ''}{growth}%
-            </span>
-            <span className="text-gray-500 text-sm ml-1">vs last month</span>
-          </div>
+          {growth !== undefined && (
+            <div className="flex items-center mt-2">
+              <TrendingUp size={16} className={`${growth >= 0 ? 'text-green-500' : 'text-red-500'} mr-1`} />
+              <span className={`text-sm font-medium ${growth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {growth >= 0 ? '+' : ''}{growth.toFixed(1)}%
+              </span>
+              <span className="text-gray-500 text-sm ml-1">vs last month</span>
+            </div>
+          )}
         </div>
         <div className={`w-12 h-12 ${color} rounded-lg flex items-center justify-center`}>
           <Icon size={24} className="text-white" />
@@ -80,6 +167,47 @@ const AdminDashboard: React.FC = () => {
       </div>
     </div>
   );
+
+  const filteredOrders = orders.filter(order => {
+    const matchesSearch = order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         order.delivery_address.fullAddress.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || order.order_status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-orange-500 mx-auto mb-4" />
+          <p className="text-gray-600">Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Error Loading Dashboard</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={refreshData}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -89,15 +217,19 @@ const AdminDashboard: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
-              <p className="text-gray-600 mt-1">Welcome back! Here's what's happening with your store.</p>
+              <p className="text-gray-600 mt-1">Manage your rice delivery business</p>
             </div>
             <div className="flex items-center space-x-3">
+              <button
+                onClick={refreshData}
+                className="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors"
+              >
+                <RefreshCw size={16} />
+                <span>Refresh</span>
+              </button>
               <div className="text-right">
-                <p className="text-sm text-gray-600">Today</p>
-                <p className="font-semibold text-gray-800">{new Date().toLocaleDateString()}</p>
-              </div>
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold">A</span>
+                <p className="text-sm text-gray-600">Last updated</p>
+                <p className="font-semibold text-gray-800">{new Date().toLocaleTimeString()}</p>
               </div>
             </div>
           </div>
@@ -110,14 +242,14 @@ const AdminDashboard: React.FC = () => {
           <nav className="flex space-x-8">
             {[
               { id: 'overview', label: 'Overview', icon: BarChart3 },
-              { id: 'orders', label: 'Orders', icon: ShoppingCart },
-              { id: 'products', label: 'Products', icon: Package },
-              { id: 'customers', label: 'Customers', icon: Users }
+              { id: 'orders', label: 'Orders', icon: ShoppingCart, badge: stats.pendingOrders },
+              { id: 'products', label: 'Products', icon: Package, badge: stats.lowStockProducts },
+              { id: 'announcements', label: 'Announcements', icon: Megaphone }
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
+                className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors relative ${
                   activeTab === tab.id
                     ? 'border-orange-500 text-orange-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -125,6 +257,11 @@ const AdminDashboard: React.FC = () => {
               >
                 <tab.icon size={18} />
                 <span>{tab.label}</span>
+                {tab.badge > 0 && (
+                  <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {tab.badge}
+                  </span>
+                )}
               </button>
             ))}
           </nav>
@@ -137,28 +274,30 @@ const AdminDashboard: React.FC = () => {
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <StatCard
-                title="Total Revenue"
+                title="Monthly Revenue"
                 value={`₹${stats.totalRevenue.toLocaleString()}`}
                 growth={stats.revenueGrowth}
                 icon={DollarSign}
                 color="bg-green-500"
               />
               <StatCard
-                title="Total Orders"
+                title="Monthly Orders"
                 value={stats.totalOrders}
                 growth={stats.orderGrowth}
                 icon={ShoppingCart}
                 color="bg-blue-500"
+                alert={stats.pendingOrders > 0}
               />
               <StatCard
-                title="Products"
+                title="Total Products"
                 value={stats.totalProducts}
                 growth={stats.productGrowth}
                 icon={Package}
                 color="bg-purple-500"
+                alert={stats.lowStockProducts > 0}
               />
               <StatCard
-                title="Customers"
+                title="Total Customers"
                 value={stats.totalCustomers}
                 growth={stats.customerGrowth}
                 icon={Users}
@@ -166,55 +305,58 @@ const AdminDashboard: React.FC = () => {
               />
             </div>
 
-            {/* Charts and Tables */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Recent Orders */}
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-gray-800">Recent Orders</h3>
-                  <button className="text-orange-500 hover:text-orange-600 font-medium text-sm">
-                    View All
-                  </button>
+            {/* Alerts */}
+            {(stats.pendingOrders > 0 || stats.lowStockProducts > 0) && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center space-x-2 mb-2">
+                  <AlertCircle size={20} className="text-red-500" />
+                  <h3 className="font-semibold text-red-800">Attention Required</h3>
                 </div>
-                <div className="space-y-4">
-                  {recentOrders.map((order) => (
-                    <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-gray-800">#{order.id}</p>
-                        <p className="text-sm text-gray-600">{order.customer}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-gray-800">₹{order.amount}</p>
-                        <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}>
-                          {order.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                <div className="space-y-1 text-red-700">
+                  {stats.pendingOrders > 0 && (
+                    <p>• {stats.pendingOrders} orders pending payment</p>
+                  )}
+                  {stats.lowStockProducts > 0 && (
+                    <p>• {stats.lowStockProducts} products running low on stock</p>
+                  )}
                 </div>
               </div>
+            )}
 
-              {/* Top Products */}
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-gray-800">Top Products</h3>
-                  <button className="text-orange-500 hover:text-orange-600 font-medium text-sm">
-                    View All
-                  </button>
-                </div>
-                <div className="space-y-4">
-                  {topProducts.map((product, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-800 text-sm">{product.name}</p>
-                        <p className="text-xs text-gray-600">{product.sales} units sold</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-gray-800">₹{product.revenue.toLocaleString()}</p>
+            {/* Recent Orders */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-800">Recent Orders</h3>
+                <button
+                  onClick={() => setActiveTab('orders')}
+                  className="text-orange-500 hover:text-orange-600 font-medium text-sm"
+                >
+                  View All
+                </button>
+              </div>
+              <div className="space-y-4">
+                {orders.slice(0, 5).map((order) => (
+                  <div
+                    key={order.id}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex items-center space-x-3">
+                      {getStatusIcon(order.order_status)}
+                      <div>
+                        <p className="font-medium text-gray-800">#{order.id.slice(0, 8)}</p>
+                        <p className="text-sm text-gray-600">
+                          {new Date(order.created_at).toLocaleDateString()}
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-gray-800">₹{order.total_amount}</p>
+                      <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.order_status)}`}>
+                        {order.order_status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -225,12 +367,27 @@ const AdminDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-800">Orders Management</h2>
               <div className="flex items-center space-x-3">
-                <select className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
-                  <option>All Orders</option>
-                  <option>Pending</option>
-                  <option>Confirmed</option>
-                  <option>Dispatched</option>
-                  <option>Delivered</option>
+                <div className="relative">
+                  <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search orders..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                >
+                  <option value="all">All Orders</option>
+                  <option value="pending">Pending</option>
+                  <option value="prepaid">Pre-paid</option>
+                  <option value="fully_paid">Fully Paid</option>
+                  <option value="dispatched">Dispatched</option>
+                  <option value="delivered">Delivered</option>
                 </select>
               </div>
             </div>
@@ -241,7 +398,7 @@ const AdminDashboard: React.FC = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Order ID
+                        Order Details
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Customer
@@ -253,40 +410,91 @@ const AdminDashboard: React.FC = () => {
                         Status
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {recentOrders.map((order) => (
+                    {filteredOrders.map((order) => (
                       <tr key={order.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          #{order.id}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {order.customer}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          ₹{order.amount}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              #{order.id.slice(0, 8)}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {new Date(order.created_at).toLocaleDateString()} • {order.order_type}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              {order.order_items?.length || 0} items
+                            </div>
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(order.status)}`}>
-                            {order.status}
-                          </span>
+                          <div className="text-sm text-gray-900">
+                            {order.delivery_address.fullAddress.slice(0, 30)}...
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            PIN: {order.delivery_address.pincode}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(order.date).toLocaleDateString()}
+                          ₹{order.total_amount}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center space-x-2">
+                            {getStatusIcon(order.order_status)}
+                            <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(order.order_status)}`}>
+                              {order.order_status}
+                            </span>
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center space-x-2">
+                            {order.order_status === 'pending' && (
+                              <button
+                                onClick={() => handleUpdateOrderStatus(order.id, 'fully_paid')}
+                                disabled={actionLoading === order.id}
+                                className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                                title="Mark as Paid"
+                              >
+                                {actionLoading === order.id ? (
+                                  <Loader2 size={16} className="animate-spin" />
+                                ) : (
+                                  <CheckCircle size={16} />
+                                )}
+                              </button>
+                            )}
+                            {(order.order_status === 'fully_paid' || order.order_status === 'prepaid') && (
+                              <button
+                                onClick={() => handleUpdateOrderStatus(order.id, 'dispatched')}
+                                disabled={actionLoading === order.id}
+                                className="text-purple-600 hover:text-purple-900 disabled:opacity-50"
+                                title="Mark as Dispatched"
+                              >
+                                {actionLoading === order.id ? (
+                                  <Loader2 size={16} className="animate-spin" />
+                                ) : (
+                                  <Truck size={16} />
+                                )}
+                              </button>
+                            )}
+                            {order.order_status === 'dispatched' && (
+                              <button
+                                onClick={() => handleUpdateOrderStatus(order.id, 'delivered')}
+                                disabled={actionLoading === order.id}
+                                className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                                title="Mark as Delivered"
+                              >
+                                {actionLoading === order.id ? (
+                                  <Loader2 size={16} className="animate-spin" />
+                                ) : (
+                                  <CheckCircle size={16} />
+                                )}
+                              </button>
+                            )}
                             <button className="text-blue-600 hover:text-blue-900">
                               <Eye size={16} />
-                            </button>
-                            <button className="text-green-600 hover:text-green-900">
-                              <Edit size={16} />
                             </button>
                           </div>
                         </td>
@@ -303,38 +511,117 @@ const AdminDashboard: React.FC = () => {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-800">Products Management</h2>
-              <button className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2">
-                <Plus size={18} />
-                <span>Add Product</span>
-              </button>
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedProduct(null);
+                    setShowProductModal(true);
+                  }}
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2"
+                >
+                  <Plus size={18} />
+                  <span>Add Product</span>
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {topProducts.map((product, index) => (
-                <div key={index} className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-gray-800">{product.name}</h3>
-                    <div className="flex items-center space-x-2">
-                      <button className="text-blue-600 hover:text-blue-800">
-                        <Edit size={16} />
-                      </button>
-                      <button className="text-red-600 hover:text-red-800">
-                        <Trash2 size={16} />
-                      </button>
+              {filteredProducts.map((product) => (
+                <div key={product.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                  <div className="relative h-48">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-4 right-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        product.available_quantity < 10 
+                          ? 'bg-red-100 text-red-800' 
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        Stock: {product.available_quantity}
+                      </span>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Sales:</span>
-                      <span className="font-medium">{product.sales} units</span>
+                  
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-gray-800">{product.name}</h3>
+                      <span className={`w-3 h-3 rounded-full ${product.is_active ? 'bg-green-500' : 'bg-gray-400'}`}></span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Revenue:</span>
-                      <span className="font-medium">₹{product.revenue.toLocaleString()}</span>
+                    
+                    <p className="text-sm text-gray-600 mb-3">{product.description.slice(0, 80)}...</p>
+                    
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Category:</span>
+                        <span className="font-medium capitalize">{product.category}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Weight:</span>
+                        <span className="font-medium">{product.weight}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Base Price:</span>
+                        <span className="font-medium">₹{product.base_price}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Status:</span>
-                      <span className="text-green-600 font-medium">Active</span>
+
+                    {/* Stock Update */}
+                    <div className="mb-4">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Update Stock
+                      </label>
+                      <div className="flex space-x-2">
+                        <input
+                          type="number"
+                          defaultValue={product.available_quantity}
+                          className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-orange-500"
+                          onBlur={(e) => {
+                            const newQuantity = parseInt(e.target.value);
+                            if (newQuantity !== product.available_quantity && newQuantity >= 0) {
+                              handleUpdateStock(product.id, newQuantity);
+                            }
+                          }}
+                        />
+                        {actionLoading === product.id && (
+                          <Loader2 size={16} className="animate-spin text-orange-500 mt-1" />
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => {
+                          setSelectedProduct(product);
+                          setShowProductModal(true);
+                        }}
+                        className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-1"
+                      >
+                        <Edit size={14} />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm('Are you sure you want to delete this product?')) {
+                            deleteProduct(product.id);
+                          }
+                        }}
+                        className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -343,90 +630,98 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'customers' && (
+        {activeTab === 'announcements' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-800">Customer Management</h2>
-              <div className="flex items-center space-x-3">
-                <input
-                  type="text"
-                  placeholder="Search customers..."
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                />
-              </div>
+              <h2 className="text-2xl font-bold text-gray-800">Announcements</h2>
+              <button
+                onClick={() => {
+                  setSelectedAnnouncement(null);
+                  setShowAnnouncementModal(true);
+                }}
+                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2"
+              >
+                <Plus size={18} />
+                <span>Add Announcement</span>
+              </button>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Customer
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Email
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Orders
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Total Spent
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Last Order
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {recentOrders.map((order, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center mr-3">
-                              <span className="text-white text-sm font-bold">
-                                {order.customer.charAt(0)}
-                              </span>
-                            </div>
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">{order.customer}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {order.customer.toLowerCase().replace(' ', '.')}@email.com
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {Math.floor(Math.random() * 10) + 1}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          ₹{(order.amount * (Math.floor(Math.random() * 3) + 1)).toLocaleString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(order.date).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center space-x-2">
-                            <button className="text-blue-600 hover:text-blue-900">
-                              <Eye size={16} />
-                            </button>
-                            <button className="text-green-600 hover:text-green-900">
-                              <Edit size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div className="space-y-4">
+              {announcements.map((announcement) => (
+                <div
+                  key={announcement.id}
+                  className="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          announcement.type === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                          announcement.type === 'success' ? 'bg-green-100 text-green-800' :
+                          announcement.type === 'promotion' ? 'bg-purple-100 text-purple-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {announcement.type}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          Priority: {announcement.priority}
+                        </span>
+                        <span className={`w-3 h-3 rounded-full ${announcement.is_active ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                      </div>
+                      <p className="text-gray-800 mb-2">{announcement.message}</p>
+                      <p className="text-sm text-gray-500">
+                        Created: {new Date(announcement.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-2 ml-4">
+                      <button
+                        onClick={() => {
+                          setSelectedAnnouncement(announcement);
+                          setShowAnnouncementModal(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-800 p-2"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm('Are you sure you want to delete this announcement?')) {
+                            deleteAnnouncement(announcement.id);
+                          }
+                        }}
+                        className="text-red-600 hover:text-red-800 p-2"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      <ProductModal
+        isOpen={showProductModal}
+        onClose={() => {
+          setShowProductModal(false);
+          setSelectedProduct(null);
+        }}
+        onSave={handleProductSave}
+        product={selectedProduct}
+      />
+
+      <AnnouncementModal
+        isOpen={showAnnouncementModal}
+        onClose={() => {
+          setShowAnnouncementModal(false);
+          setSelectedAnnouncement(null);
+        }}
+        onSave={handleAnnouncementSave}
+        announcement={selectedAnnouncement}
+      />
     </div>
   );
 };
