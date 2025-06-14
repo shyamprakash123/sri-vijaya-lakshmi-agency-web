@@ -19,13 +19,319 @@ import {
   Truck,
   X,
   Megaphone,
-  Image as ImageIcon,
   Search,
-  Filter
+  Filter,
+  MapPin,
+  Phone,
+  Mail,
+  CreditCard,
+  FileText,
+  Download,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { useAdmin } from '../../hooks/useAdmin';
+import { Order } from '../../types';
 import ProductModal from '../../components/admin/ProductModal';
 import AnnouncementModal from '../../components/admin/AnnouncementModal';
+
+interface OrderDetailsModalProps {
+  order: Order | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onStatusUpdate: (orderId: string, status: string) => Promise<void>;
+  loading?: boolean;
+}
+
+const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
+  order,
+  isOpen,
+  onClose,
+  onStatusUpdate,
+  loading = false
+}) => {
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  if (!isOpen || !order) return null;
+
+  const handleStatusUpdate = async (newStatus: string) => {
+    try {
+      setUpdatingStatus(true);
+      await onStatusUpdate(order.id, newStatus);
+    } catch (error) {
+      console.error('Error updating status:', error);
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Clock className="w-5 h-5 text-yellow-500" />;
+      case 'prepaid':
+      case 'fully_paid':
+        return <CheckCircle className="w-5 h-5 text-blue-500" />;
+      case 'dispatched':
+        return <Truck className="w-5 h-5 text-purple-500" />;
+      case 'delivered':
+        return <CheckCircle className="w-5 h-5 text-green-500" />;
+      case 'cancelled':
+        return <X className="w-5 h-5 text-red-500" />;
+      default:
+        return <Package className="w-5 h-5 text-gray-500" />;
+    }
+  };
+
+  const getAvailableStatusUpdates = (currentStatus: string) => {
+    switch (currentStatus) {
+      case 'pending':
+        return [
+          { value: 'fully_paid', label: 'Mark as Paid', color: 'bg-blue-500' },
+          { value: 'cancelled', label: 'Cancel Order', color: 'bg-red-500' }
+        ];
+      case 'prepaid':
+        return [
+          { value: 'fully_paid', label: 'Mark as Fully Paid', color: 'bg-blue-500' },
+          { value: 'dispatched', label: 'Prepare for Dispatch', color: 'bg-purple-500' },
+          { value: 'cancelled', label: 'Cancel Order', color: 'bg-red-500' }
+        ];
+      case 'fully_paid':
+        return [
+          { value: 'dispatched', label: 'Mark as Dispatched', color: 'bg-purple-500' },
+          { value: 'cancelled', label: 'Cancel Order', color: 'bg-red-500' }
+        ];
+      case 'dispatched':
+        return [
+          { value: 'delivered', label: 'Mark as Delivered', color: 'bg-green-500' }
+        ];
+      default:
+        return [];
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-t-2xl">
+          <div>
+            <h2 className="text-2xl font-bold">Order Details</h2>
+            <p className="opacity-90">#{order.id}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-white hover:bg-opacity-20 rounded-full transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Order Status and Actions */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">Current Status</h3>
+              <div className="flex items-center space-x-3 mb-4">
+                {getStatusIcon(order.order_status)}
+                <div>
+                  <p className="font-semibold capitalize">{order.order_status.replace('_', ' ')}</p>
+                  <p className="text-sm text-gray-600">
+                    {order.order_type === 'preorder' ? 'Pre-order' : 'Instant order'}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Status Update Actions */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-700">Update Status:</p>
+                <div className="flex flex-wrap gap-2">
+                  {getAvailableStatusUpdates(order.order_status).map((action) => (
+                    <button
+                      key={action.value}
+                      onClick={() => handleStatusUpdate(action.value)}
+                      disabled={updatingStatus}
+                      className={`${action.color} hover:opacity-90 disabled:opacity-50 text-white px-3 py-1 rounded-lg text-sm font-medium transition-colors flex items-center space-x-1`}
+                    >
+                      {updatingStatus ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        getStatusIcon(action.value)
+                      )}
+                      <span>{action.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">Order Summary</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Order Date:</span>
+                  <span className="font-medium">
+                    {new Date(order.created_at).toLocaleDateString('en-IN', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Amount:</span>
+                  <span className="font-bold text-orange-500">₹{order.total_amount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Payment Status:</span>
+                  <span className="font-medium capitalize">{order.payment_status}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Items:</span>
+                  <span className="font-medium">{order.order_items?.length || 0}</span>
+                </div>
+                {order.gst_number && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">GST Number:</span>
+                    <span className="font-medium">{order.gst_number}</span>
+                  </div>
+                )}
+                {order.scheduled_delivery && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Scheduled:</span>
+                    <span className="font-medium">
+                      {new Date(order.scheduled_delivery).toLocaleDateString('en-IN')}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Order Items */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Order Items</h3>
+            <div className="bg-gray-50 rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Product</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Quantity</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Price/Bag</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Slab</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {order.order_items?.map((item) => (
+                      <tr key={item.id}>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center space-x-3">
+                            {item.products && (
+                              <>
+                                <img
+                                  src={item.products.image}
+                                  alt={item.products.name}
+                                  className="w-12 h-12 object-cover rounded-lg"
+                                />
+                                <div>
+                                  <p className="font-medium text-gray-800">{item.products.name}</p>
+                                  <p className="text-sm text-gray-600">{item.products.weight}</p>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 font-medium">{item.quantity}</td>
+                        <td className="px-4 py-3">₹{item.price_per_bag}</td>
+                        <td className="px-4 py-3">
+                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                            {item.slab_label}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 font-semibold">₹{item.price_per_bag * item.quantity}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Delivery Information */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <MapPin size={20} className="mr-2 text-orange-500" />
+                Delivery Address
+              </h3>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-gray-800 mb-2">{order.delivery_address.fullAddress}</p>
+                <p className="text-gray-600">Pincode: {order.delivery_address.pincode}</p>
+                {order.delivery_address.landmark && (
+                  <p className="text-gray-600">Landmark: {order.delivery_address.landmark}</p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <CreditCard size={20} className="mr-2 text-orange-500" />
+                Payment Information
+              </h3>
+              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Payment Hash:</span>
+                  <span className="font-mono text-sm">{order.payment_hash}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">UPI Link:</span>
+                  <a
+                    href={order.upi_link}
+                    className="text-blue-500 hover:text-blue-600 text-sm"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    View Payment Link
+                  </a>
+                </div>
+                {order.order_type === 'preorder' && order.payment_status === 'partial' && (
+                  <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-yellow-800 text-sm">
+                      <strong>Pre-order Payment:</strong><br />
+                      Paid: ₹{Math.ceil(order.total_amount / 2)}<br />
+                      Remaining: ₹{Math.floor(order.total_amount / 2)}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => window.print()}
+              className="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              <FileText size={16} />
+              <span>Print</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const AdminDashboard: React.FC = () => {
   const {
@@ -50,16 +356,31 @@ const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showProductModal, setShowProductModal] = useState(false);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [showOrderModal, setShowOrderModal] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState({
+    startDate: '',
+    endDate: ''
+  });
+  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
 
   const handleUpdateOrderStatus = async (orderId: string, status: string) => {
     try {
       setActionLoading(orderId);
       await updateOrderStatus(orderId, status);
+      
+      // Update the selected order if it's currently being viewed
+      if (selectedOrder && selectedOrder.id === orderId) {
+        const updatedOrder = orders.find(o => o.id === orderId);
+        if (updatedOrder) {
+          setSelectedOrder(updatedOrder);
+        }
+      }
     } catch (error) {
       console.error('Error updating order status:', error);
     } finally {
@@ -108,6 +429,16 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const toggleOrderExpansion = (orderId: string) => {
+    const newExpanded = new Set(expandedOrders);
+    if (newExpanded.has(orderId)) {
+      newExpanded.delete(orderId);
+    } else {
+      newExpanded.add(orderId);
+    }
+    setExpandedOrders(newExpanded);
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
@@ -119,6 +450,8 @@ const AdminDashboard: React.FC = () => {
         return <Truck className="w-4 h-4 text-purple-500" />;
       case 'delivered':
         return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'cancelled':
+        return <X className="w-4 h-4 text-red-500" />;
       default:
         return <Package className="w-4 h-4 text-gray-500" />;
     }
@@ -135,6 +468,8 @@ const AdminDashboard: React.FC = () => {
         return 'text-purple-600 bg-purple-100';
       case 'delivered':
         return 'text-green-600 bg-green-100';
+      case 'cancelled':
+        return 'text-red-600 bg-red-100';
       default:
         return 'text-gray-600 bg-gray-100';
     }
@@ -168,11 +503,23 @@ const AdminDashboard: React.FC = () => {
     </div>
   );
 
+  // Filter orders based on search, status, and date
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.delivery_address.fullAddress.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || order.order_status === statusFilter;
-    return matchesSearch && matchesStatus;
+    
+    let matchesDate = true;
+    if (dateFilter.startDate || dateFilter.endDate) {
+      const orderDate = new Date(order.created_at);
+      const startDate = dateFilter.startDate ? new Date(dateFilter.startDate) : null;
+      const endDate = dateFilter.endDate ? new Date(dateFilter.endDate) : null;
+      
+      if (startDate && orderDate < startDate) matchesDate = false;
+      if (endDate && orderDate > endDate) matchesDate = false;
+    }
+    
+    return matchesSearch && matchesStatus && matchesDate;
   });
 
   const filteredProducts = products.filter(product =>
@@ -388,7 +735,39 @@ const AdminDashboard: React.FC = () => {
                   <option value="fully_paid">Fully Paid</option>
                   <option value="dispatched">Dispatched</option>
                   <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
                 </select>
+              </div>
+            </div>
+
+            {/* Date Filter */}
+            <div className="bg-white rounded-lg shadow-md p-4">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <Calendar size={16} className="text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">Filter by Date:</span>
+                </div>
+                <input
+                  type="date"
+                  value={dateFilter.startDate}
+                  onChange={(e) => setDateFilter(prev => ({ ...prev, startDate: e.target.value }))}
+                  className="px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  placeholder="Start Date"
+                />
+                <span className="text-gray-500">to</span>
+                <input
+                  type="date"
+                  value={dateFilter.endDate}
+                  onChange={(e) => setDateFilter(prev => ({ ...prev, endDate: e.target.value }))}
+                  className="px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  placeholder="End Date"
+                />
+                <button
+                  onClick={() => setDateFilter({ startDate: '', endDate: '' })}
+                  className="text-orange-500 hover:text-orange-600 text-sm font-medium"
+                >
+                  Clear
+                </button>
               </div>
             </div>
 
@@ -416,89 +795,130 @@ const AdminDashboard: React.FC = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredOrders.map((order) => (
-                      <tr key={order.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              #{order.id.slice(0, 8)}
+                      <React.Fragment key={order.id}>
+                        <tr className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center space-x-3">
+                              <button
+                                onClick={() => toggleOrderExpansion(order.id)}
+                                className="text-gray-400 hover:text-gray-600"
+                              >
+                                {expandedOrders.has(order.id) ? (
+                                  <ChevronUp size={16} />
+                                ) : (
+                                  <ChevronDown size={16} />
+                                )}
+                              </button>
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  #{order.id.slice(0, 8)}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {new Date(order.created_at).toLocaleDateString()} • {order.order_type}
+                                </div>
+                                <div className="text-xs text-gray-400">
+                                  {order.order_items?.length || 0} items
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {order.delivery_address.fullAddress.slice(0, 30)}...
                             </div>
                             <div className="text-sm text-gray-500">
-                              {new Date(order.created_at).toLocaleDateString()} • {order.order_type}
+                              PIN: {order.delivery_address.pincode}
                             </div>
-                            <div className="text-xs text-gray-400">
-                              {order.order_items?.length || 0} items
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ₹{order.total_amount}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center space-x-2">
+                              {getStatusIcon(order.order_status)}
+                              <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(order.order_status)}`}>
+                                {order.order_status}
+                              </span>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {order.delivery_address.fullAddress.slice(0, 30)}...
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            PIN: {order.delivery_address.pincode}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          ₹{order.total_amount}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center space-x-2">
-                            {getStatusIcon(order.order_status)}
-                            <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(order.order_status)}`}>
-                              {order.order_status}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center space-x-2">
-                            {order.order_status === 'pending' && (
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex items-center space-x-2">
+                              {order.order_status === 'pending' && (
+                                <button
+                                  onClick={() => handleUpdateOrderStatus(order.id, 'fully_paid')}
+                                  disabled={actionLoading === order.id}
+                                  className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                                  title="Mark as Paid"
+                                >
+                                  {actionLoading === order.id ? (
+                                    <Loader2 size={16} className="animate-spin" />
+                                  ) : (
+                                    <CheckCircle size={16} />
+                                  )}
+                                </button>
+                              )}
+                              {(order.order_status === 'fully_paid' || order.order_status === 'prepaid') && (
+                                <button
+                                  onClick={() => handleUpdateOrderStatus(order.id, 'dispatched')}
+                                  disabled={actionLoading === order.id}
+                                  className="text-purple-600 hover:text-purple-900 disabled:opacity-50"
+                                  title="Mark as Dispatched"
+                                >
+                                  {actionLoading === order.id ? (
+                                    <Loader2 size={16} className="animate-spin" />
+                                  ) : (
+                                    <Truck size={16} />
+                                  )}
+                                </button>
+                              )}
+                              {order.order_status === 'dispatched' && (
+                                <button
+                                  onClick={() => handleUpdateOrderStatus(order.id, 'delivered')}
+                                  disabled={actionLoading === order.id}
+                                  className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                                  title="Mark as Delivered"
+                                >
+                                  {actionLoading === order.id ? (
+                                    <Loader2 size={16} className="animate-spin" />
+                                  ) : (
+                                    <CheckCircle size={16} />
+                                  )}
+                                </button>
+                              )}
                               <button
-                                onClick={() => handleUpdateOrderStatus(order.id, 'fully_paid')}
-                                disabled={actionLoading === order.id}
-                                className="text-green-600 hover:text-green-900 disabled:opacity-50"
-                                title="Mark as Paid"
+                                onClick={() => {
+                                  setSelectedOrder(order);
+                                  setShowOrderModal(true);
+                                }}
+                                className="text-blue-600 hover:text-blue-900"
+                                title="View Details"
                               >
-                                {actionLoading === order.id ? (
-                                  <Loader2 size={16} className="animate-spin" />
-                                ) : (
-                                  <CheckCircle size={16} />
-                                )}
+                                <Eye size={16} />
                               </button>
-                            )}
-                            {(order.order_status === 'fully_paid' || order.order_status === 'prepaid') && (
-                              <button
-                                onClick={() => handleUpdateOrderStatus(order.id, 'dispatched')}
-                                disabled={actionLoading === order.id}
-                                className="text-purple-600 hover:text-purple-900 disabled:opacity-50"
-                                title="Mark as Dispatched"
-                              >
-                                {actionLoading === order.id ? (
-                                  <Loader2 size={16} className="animate-spin" />
-                                ) : (
-                                  <Truck size={16} />
+                            </div>
+                          </td>
+                        </tr>
+                        {expandedOrders.has(order.id) && (
+                          <tr>
+                            <td colSpan={5} className="px-6 py-4 bg-gray-50">
+                              <div className="space-y-2">
+                                <h4 className="font-medium text-gray-800">Order Items:</h4>
+                                {order.order_items?.map((item) => (
+                                  <div key={item.id} className="flex items-center justify-between text-sm">
+                                    <span>{item.products?.name} × {item.quantity}</span>
+                                    <span>₹{item.price_per_bag * item.quantity}</span>
+                                  </div>
+                                ))}
+                                {order.scheduled_delivery && (
+                                  <p className="text-sm text-gray-600">
+                                    <strong>Scheduled:</strong> {new Date(order.scheduled_delivery).toLocaleDateString()}
+                                  </p>
                                 )}
-                              </button>
-                            )}
-                            {order.order_status === 'dispatched' && (
-                              <button
-                                onClick={() => handleUpdateOrderStatus(order.id, 'delivered')}
-                                disabled={actionLoading === order.id}
-                                className="text-green-600 hover:text-green-900 disabled:opacity-50"
-                                title="Mark as Delivered"
-                              >
-                                {actionLoading === order.id ? (
-                                  <Loader2 size={16} className="animate-spin" />
-                                ) : (
-                                  <CheckCircle size={16} />
-                                )}
-                              </button>
-                            )}
-                            <button className="text-blue-600 hover:text-blue-900">
-                              <Eye size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                     ))}
                   </tbody>
                 </table>
@@ -721,6 +1141,17 @@ const AdminDashboard: React.FC = () => {
         }}
         onSave={handleAnnouncementSave}
         announcement={selectedAnnouncement}
+      />
+
+      <OrderDetailsModal
+        order={selectedOrder}
+        isOpen={showOrderModal}
+        onClose={() => {
+          setShowOrderModal(false);
+          setSelectedOrder(null);
+        }}
+        onStatusUpdate={handleUpdateOrderStatus}
+        loading={actionLoading === selectedOrder?.id}
       />
     </div>
   );
