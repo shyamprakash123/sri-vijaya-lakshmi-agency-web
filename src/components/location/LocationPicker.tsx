@@ -33,6 +33,34 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
     return pincodeMatch ? pincodeMatch[0] : '';
   };
 
+  const reverseGeoCode = async (lat: number, lng: number) => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `https://api.olamaps.io/places/v1/reverse-geocode?latlng=${lat},${lng}&api_key=${import.meta.env.VITE_OLA_MAPS_API_KEY}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const address = data.results[0];
+        if (address) {
+          const locationData = {
+            fullAddress: address.formatted_address,
+            pincode: extractPincode(address.formatted_address),
+            landmark: '',
+            coordinates: { lat, lng },
+          };
+          setSelectedLocation(locationData);
+          onLocationSelect(locationData);
+        }
+      }
+    } catch (err) {
+      console.error('Reverse geocode failed:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const updateMarker = (lat: number, lng: number) => {
     if (markerRef.current) {
       markerRef.current.remove();
@@ -53,9 +81,11 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
     const map = olaMaps.init({
       container: mapRef.current,
       style: "https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json",
-      center: [77.61648476788898, 12.931423492103944],
+      center: [78.35811839999997, 17.439204293719442],
       zoom: 15,
     });
+
+    await reverseGeoCode(17.439204293719442, 78.35811839999997);
 
     mapInstance.current = map;
 
@@ -74,31 +104,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
       const center = map.getCenter();
       const { lat, lng } = center;
 
-      try {
-        setLoading(true);
-        const response = await fetch(
-          `https://api.olamaps.io/places/v1/reverse-geocode?latlng=${lat},${lng}&api_key=${import.meta.env.VITE_OLA_MAPS_API_KEY}`
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          const address = data.results[0];
-          if (address) {
-            const locationData = {
-              fullAddress: address.formatted_address,
-              pincode: extractPincode(address.formatted_address),
-              landmark: '',
-              coordinates: { lat, lng },
-            };
-            setSelectedLocation(locationData);
-            onLocationSelect(locationData);
-          }
-        }
-      } catch (err) {
-        console.error('Reverse geocode failed:', err);
-      } finally {
-        setLoading(false);
-      }
+      await reverseGeoCode(lat, lng);
     });
   };
 
@@ -128,7 +134,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
   const selectSuggestion = async (suggestion: any) => {
     try {
       setLoading(true);
-      const coords = suggestion?.geometry?.location || { lat: 12.9716, lng: 77.5946 };
+      const coords = suggestion?.geometry?.location || { lat: 17.439204293719442, lng: 78.35811839999997 };
       const locationData = {
         fullAddress: suggestion.description,
         pincode: extractPincode(suggestion.description),
@@ -189,7 +195,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
 
       {/* Fixed Center Marker */}
       <div className="absolute top-1/2 left-1/2 z-10 transform -translate-x-1/2 -translate-y-full pointer-events-none">
-        <MapPin className="h-10 w-10 drop-shadow-md text-secondary-500 fill-secondary-500" />
+      <MapPin className="h-14 w-14 text-secondary-500 drop-shadow-md fill-primary-800" />
       </div>
 
       {/* Search Bar */}
@@ -234,7 +240,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
       {/* Selected Address */}
       {selectedLocation && (
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white rounded shadow-md p-4 w-[90%] max-w-md text-sm z-20">
-          <div className="font-semibold">Selected Address</div>
+          <div className="font-semibold">Delivery Address</div>
           <div>{selectedLocation.fullAddress}</div>
           <div className="text-xs text-gray-500">Pincode: {selectedLocation.pincode}</div>
         </div>

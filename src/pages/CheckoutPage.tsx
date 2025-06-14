@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, CreditCard, Package, Clock, Loader2, AlertTriangle, Truck, Store } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
@@ -6,6 +6,7 @@ import { useOrders } from '../hooks/useOrders';
 import { useCoupons } from '../hooks/useCoupons';
 import { Address } from '../types';
 import LocationPicker from '../components/location/LocationPicker';
+import SuggestedVehicleCard from '../components/SuggestedVehicleCard';
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -27,15 +28,16 @@ const CheckoutPage: React.FC = () => {
   const [discount, setDiscount] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [stockErrors, setStockErrors] = useState<string[]>([]);
+  const [fetchVehicleLoading, setFetchVehicleLoading] = useState<boolean>(false);
+  const [suggestedVehicle, setSuggestedVehicle] = useState(null);
 
   const subtotal = getTotalAmount();
-  const transportationAmount = transportationRequired ? 50 : 0; // ₹50 transportation fee
-  const finalAmount = subtotal + transportationAmount - discount;
+  const finalAmount = subtotal + discount;
 
   // Check stock availability for all cart items
   const checkStockAvailability = () => {
     const errors: string[] = [];
-    
+
     cartItems.forEach(item => {
       if (item.quantity > item.product.available_quantity) {
         errors.push(`${item.product.name}: Only ${item.product.available_quantity} bags available (you have ${item.quantity} in cart)`);
@@ -44,10 +46,56 @@ const CheckoutPage: React.FC = () => {
         errors.push(`${item.product.name}: Out of stock`);
       }
     });
-    
+
     setStockErrors(errors);
     return errors.length === 0;
   };
+
+  useEffect(() => {
+    if (!deliveryAddress?.coordinates?.lat || !deliveryAddress?.coordinates?.lng) return;
+
+    setFetchVehicleLoading(true);
+
+    const timeout = setTimeout(async () => {
+      const queryParams = new URLSearchParams({
+        to_address_lat: deliveryAddress.coordinates.lat,
+        to_address_long: deliveryAddress.coordinates.lng,
+        weight: '700'
+      });
+
+      const url = `${import.meta.env.VITE_PORTER_SERVER_URL}/fare-estimate?${queryParams}`;
+
+      try {
+        const result = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8'
+          }
+        });
+
+        if (result.ok) {
+          const data = await result.json();
+          if (data.vehicle_name) {
+            setSuggestedVehicle(data);
+            setFetchVehicleLoading(false);
+          } else {
+            setSuggestedVehicle(null);
+            setFetchVehicleLoading(false);
+          }
+        } else {
+          setSuggestedVehicle(null);
+          setFetchVehicleLoading(false);
+        }
+      } catch (error) {
+        console.error('Error fetching fare estimate:', error);
+        setSuggestedVehicle(null);
+        setFetchVehicleLoading(false);
+      }
+    }, 2000); // Delay: 2 seconds
+
+    return () => clearTimeout(timeout); // Cancel timeout on address change
+  }, [deliveryAddress]);
+
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -116,9 +164,9 @@ const CheckoutPage: React.FC = () => {
       clearCart();
       navigate(`/order/${order.id}`);
     } catch (error) {
-      setErrors(prev => ({ 
-        ...prev, 
-        submit: error instanceof Error ? error.message : 'Failed to place order' 
+      setErrors(prev => ({
+        ...prev,
+        submit: error instanceof Error ? error.message : 'Failed to place order'
       }));
     }
   };
@@ -184,11 +232,10 @@ const CheckoutPage: React.FC = () => {
                       <p className="text-sm text-gray-600">{item.product.weight} • {item.selectedSlab.label}</p>
                       <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
                       <div className="flex items-center space-x-2 mt-1">
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          isInStock 
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-red-100 text-red-700'
-                        }`}>
+                        <span className={`text-xs px-2 py-1 rounded-full ${isInStock
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-red-100 text-red-700'
+                          }`}>
                           {isInStock ? 'In Stock' : 'Out of Stock'}
                         </span>
                         {item.quantity > item.product.available_quantity && (
@@ -254,20 +301,22 @@ const CheckoutPage: React.FC = () => {
                   className="w-4 h-4 text-orange-500"
                 />
                 <label htmlFor="transportation" className="flex-1">
-                  <div className="font-medium">Transportation Required (+₹50)</div>
+                  <div className="font-medium">Transportation Required</div>
                   <div className="text-sm text-gray-600">
-                    Check this if you need transportation assistance for heavy orders
+                    Select this option if you require a transportation service. Payment has to pay upon delivery. Your order will be dispatched within 1 hour.
                   </div>
                 </label>
               </div>
-              
+
+              <SuggestedVehicleCard vehicle={suggestedVehicle} loading={fetchVehicleLoading} />
+
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-2">
                   <Store size={16} className="text-blue-500" />
                   <h4 className="font-semibold text-blue-800">Store Pickup Available</h4>
                 </div>
                 <p className="text-sm text-blue-700">
-                  Visit our store at 123 Rice Market Street, Chennai. 
+                  Visit our store at 123 Rice Market Street, Chennai.
                   POS machine available - All cards accepted.
                 </p>
               </div>
@@ -293,11 +342,14 @@ const CheckoutPage: React.FC = () => {
                 />
                 <label htmlFor="instant" className="flex-1">
                   <div className="font-medium">Instant Order (Full Payment)</div>
-                  <div className="text-sm text-gray-600">Delivered within 1 hour via Porter</div>
+                  <div className="text-sm text-gray-600">
+                    Dispatches within 1 hour if transportation service is opted.
+                  </div>
+
                 </label>
               </div>
-              
-              <div className="flex items-center space-x-3">
+
+              {/* <div className="flex items-center space-x-3">
                 <input
                   type="radio"
                   id="preorder"
@@ -327,7 +379,7 @@ const CheckoutPage: React.FC = () => {
                   />
                   {errors.scheduledDelivery && <p className="text-red-500 text-sm mt-1">{errors.scheduledDelivery}</p>}
                 </div>
-              )}
+              )} */}
             </div>
           </div>
         </div>
@@ -336,7 +388,7 @@ const CheckoutPage: React.FC = () => {
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Payment Summary</h3>
-            
+
             {/* Coupon Section */}
             <div className="mb-4">
               <div className="flex space-x-2 mb-2">
@@ -378,31 +430,24 @@ const CheckoutPage: React.FC = () => {
                 <span className="text-gray-600">Subtotal</span>
                 <span className="font-medium">₹{subtotal}</span>
               </div>
-              
-              {transportationRequired && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Transportation</span>
-                  <span className="font-medium">₹{transportationAmount}</span>
-                </div>
-              )}
-              
+
               {discount > 0 && (
                 <div className="flex justify-between text-green-600">
                   <span>Discount</span>
                   <span>-₹{discount}</span>
                 </div>
               )}
-              
+
               <div className="border-t border-gray-200 pt-3">
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-semibold text-gray-800">Total</span>
                   <span className="text-2xl font-bold text-orange-500">₹{finalAmount}</span>
                 </div>
-                {orderType === 'preorder' && (
+                {/* {orderType === 'preorder' && (
                   <p className="text-sm text-gray-600 mt-1">
                     Pay now: ₹{Math.ceil(finalAmount / 2)} | Pay later: ₹{Math.floor(finalAmount / 2)}
                   </p>
-                )}
+                )} */}
               </div>
             </div>
 
