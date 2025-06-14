@@ -62,26 +62,67 @@ export const productService = {
     return data;
   },
 
-  async create(product: any) {
-    const { data, error } = await supabase
+  async create(productData: any) {
+    const { price_slabs, ...product } = productData;
+    
+    const { data: productResult, error: productError } = await supabase
       .from('products')
       .insert(product)
       .select()
       .single();
 
-    if (error) throw error;
-    return data;
+    if (productError) throw productError;
+
+    if (price_slabs && price_slabs.length > 0) {
+      const slabsWithProductId = price_slabs.map((slab: any) => ({
+        ...slab,
+        product_id: productResult.id
+      }));
+
+      const { error: slabsError } = await supabase
+        .from('price_slabs')
+        .insert(slabsWithProductId);
+
+      if (slabsError) throw slabsError;
+    }
+
+    return productResult;
   },
 
   async update(id: string, updates: any) {
+    const { price_slabs, ...productUpdates } = updates;
+    
     const { data, error } = await supabase
       .from('products')
-      .update(updates)
+      .update(productUpdates)
       .eq('id', id)
       .select()
       .single();
 
     if (error) throw error;
+
+    if (price_slabs) {
+      // Delete existing price slabs
+      await supabase
+        .from('price_slabs')
+        .delete()
+        .eq('product_id', id);
+
+      // Insert new price slabs
+      if (price_slabs.length > 0) {
+        const slabsWithProductId = price_slabs.map((slab: any) => ({
+          ...slab,
+          product_id: id
+        }));
+
+        const { error: slabsError } = await supabase
+          .from('price_slabs')
+          .insert(slabsWithProductId);
+
+        if (slabsError) throw slabsError;
+      }
+    }
+
     return data;
   },
 
@@ -267,12 +308,42 @@ export const couponService = {
     const { data, error } = await supabase
       .from('coupons')
       .select('*')
-      .eq('is_active', true)
-      .gte('valid_until', new Date().toISOString())
       .order('created_at', { ascending: false });
 
     if (error) throw error;
     return data;
+  },
+
+  async create(coupon: any) {
+    const { data, error } = await supabase
+      .from('coupons')
+      .insert(coupon)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async update(id: string, updates: any) {
+    const { data, error } = await supabase
+      .from('coupons')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async delete(id: string) {
+    const { error } = await supabase
+      .from('coupons')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
   }
 };
 
@@ -320,7 +391,6 @@ export const announcementService = {
     const { data, error } = await supabase
       .from('announcements')
       .select('*')
-      .eq('is_active', true)
       .order('priority', { ascending: false });
 
     if (error) throw error;
@@ -357,5 +427,32 @@ export const announcementService = {
       .eq('id', id);
 
     if (error) throw error;
+  }
+};
+
+// Category service (mock implementation for now)
+export const categoryService = {
+  async getAll() {
+    // Mock categories based on existing product categories
+    return [
+      { id: '1', name: 'Basmati Rice', slug: 'basmati', description: 'Premium long-grain basmati rice', is_active: true, sort_order: 1 },
+      { id: '2', name: 'Regular Rice', slug: 'regular', description: 'Everyday rice varieties', is_active: true, sort_order: 2 },
+      { id: '3', name: 'Premium Rice', slug: 'premium', description: 'High-quality premium rice', is_active: true, sort_order: 3 }
+    ];
+  },
+
+  async create(category: any) {
+    // Mock implementation - in real app, this would create in database
+    return { ...category, id: Date.now().toString() };
+  },
+
+  async update(id: string, updates: any) {
+    // Mock implementation
+    return { id, ...updates };
+  },
+
+  async delete(id: string) {
+    // Mock implementation
+    return true;
   }
 };

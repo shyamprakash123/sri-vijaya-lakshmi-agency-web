@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import AuthModal from '../auth/AuthModal';
 import CartSlider from '../cart/CartSlider';
+import SearchModal from './SearchModal';
 
 const Header: React.FC = () => {
   const location = useLocation();
@@ -16,6 +17,7 @@ const Header: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const navItems = [
     { name: 'Home', path: '/' },
@@ -37,6 +39,10 @@ const Header: React.FC = () => {
     } catch (error) {
       console.error('Sign out error:', error);
     }
+  };
+
+  const handleSearchClick = () => {
+    setIsSearchOpen(true);
   };
 
   return (
@@ -76,13 +82,14 @@ const Header: React.FC = () => {
 
             {/* Right Side Actions */}
             <div className="flex items-center space-x-4">
-              {/* Search - Desktop only */}
-              <Link 
-                to="/products"
-                className="hidden md:flex items-center space-x-2 text-gray-600 hover:text-orange-500 transition-colors"
+              {/* Search */}
+              <button 
+                onClick={handleSearchClick}
+                className="hidden md:flex items-center space-x-2 text-gray-600 hover:text-orange-500 transition-colors p-2 hover:bg-gray-100 rounded-lg"
+                title="Search products"
               >
                 <Search size={20} />
-              </Link>
+              </button>
 
               {/* WhatsApp Contact */}
               <a
@@ -159,6 +166,18 @@ const Header: React.FC = () => {
           {isMenuOpen && (
             <nav className="lg:hidden mt-4 pt-4 border-t border-gray-200">
               <div className="flex flex-col space-y-4">
+                {/* Mobile Search */}
+                <button
+                  onClick={() => {
+                    handleSearchClick();
+                    setIsMenuOpen(false);
+                  }}
+                  className="flex items-center space-x-2 text-gray-700 hover:text-orange-500 font-medium transition-colors"
+                >
+                  <Search size={18} />
+                  <span>Search Products</span>
+                </button>
+
                 {navItems.map(item => (
                   <Link
                     key={item.path}
@@ -233,17 +252,21 @@ const Header: React.FC = () => {
         </div>
       </header>
 
-      {/* Auth Modal */}
+      {/* Modals */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         initialMode={authMode}
       />
 
-      {/* Cart Slider */}
       <CartSlider
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
+      />
+
+      <SearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
       />
     </>
   );

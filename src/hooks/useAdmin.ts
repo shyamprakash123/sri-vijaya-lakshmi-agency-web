@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase, productService, orderService, bannerService, announcementService } from '../lib/supabase';
+import { supabase, productService, orderService, bannerService, announcementService, couponService, categoryService } from '../lib/supabase';
 import { Product, Order, Banner } from '../types';
 
 interface AdminStats {
@@ -32,6 +32,8 @@ export const useAdmin = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,7 +51,7 @@ export const useAdmin = () => {
     .subscribe();
 
   return () => {
-    supabase.removeChannel(channel); // Clean up on unmount
+    supabase.removeChannel(channel);
   };
   }, []);
 
@@ -59,17 +61,21 @@ export const useAdmin = () => {
       setError(null);
 
       // Fetch all data in parallel
-      const [ordersData, productsData, bannersData, announcementsData] = await Promise.all([
+      const [ordersData, productsData, bannersData, announcementsData, couponsData, categoriesData] = await Promise.all([
         orderService.getAll(),
         productService.getAll(),
         bannerService.getAll(),
-        announcementService.getAll()
+        announcementService.getAll(),
+        couponService.getAll(),
+        categoryService.getAll()
       ]);
 
       setOrders(ordersData);
       setProducts(productsData);
       setBanners(bannersData);
       setAnnouncements(announcementsData);
+      setCoupons(couponsData);
+      setCategories(categoriesData);
 
       // Calculate stats
       const currentMonth = new Date().getMonth();
@@ -120,27 +126,10 @@ export const useAdmin = () => {
     }
   };
 
-  const setupRealtimeSubscriptions = () => {
-    // Subscribe to orders changes
-    const ordersSubscription = supabase
-      .channel('orders_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'orders' },
-        () => {
-          fetchAdminData(); // Refresh all data when orders change
-        }
-      )
-      .subscribe();
-
-    return () => {
-      ordersSubscription.unsubscribe();
-    };
-  };
-
   const updateOrderStatus = async (orderId: string, status: string) => {
     try {
       await orderService.updateStatus(orderId, status);
-      // Data will be refreshed via real-time subscription
+      fetchAdminData();
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Failed to update order status');
     }
@@ -149,7 +138,7 @@ export const useAdmin = () => {
   const updateProductStock = async (productId: string, quantity: number) => {
     try {
       await productService.updateQuantity(productId, quantity);
-      // Data will be refreshed via real-time subscription
+      fetchAdminData();
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Failed to update product stock');
     }
@@ -158,7 +147,7 @@ export const useAdmin = () => {
   const createProduct = async (productData: any) => {
     try {
       await productService.create(productData);
-      // Data will be refreshed via real-time subscription
+      fetchAdminData();
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Failed to create product');
     }
@@ -167,7 +156,7 @@ export const useAdmin = () => {
   const updateProduct = async (productId: string, updates: any) => {
     try {
       await productService.update(productId, updates);
-      // Data will be refreshed via real-time subscription
+      fetchAdminData();
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Failed to update product');
     }
@@ -176,7 +165,7 @@ export const useAdmin = () => {
   const deleteProduct = async (productId: string) => {
     try {
       await productService.delete(productId);
-      // Data will be refreshed via real-time subscription
+      fetchAdminData();
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Failed to delete product');
     }
@@ -236,12 +225,68 @@ export const useAdmin = () => {
     }
   };
 
+  const createCoupon = async (couponData: any) => {
+    try {
+      await couponService.create(couponData);
+      fetchAdminData();
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to create coupon');
+    }
+  };
+
+  const updateCoupon = async (couponId: string, updates: any) => {
+    try {
+      await couponService.update(couponId, updates);
+      fetchAdminData();
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to update coupon');
+    }
+  };
+
+  const deleteCoupon = async (couponId: string) => {
+    try {
+      await couponService.delete(couponId);
+      fetchAdminData();
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to delete coupon');
+    }
+  };
+
+  const createCategory = async (categoryData: any) => {
+    try {
+      await categoryService.create(categoryData);
+      fetchAdminData();
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to create category');
+    }
+  };
+
+  const updateCategory = async (categoryId: string, updates: any) => {
+    try {
+      await categoryService.update(categoryId, updates);
+      fetchAdminData();
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to update category');
+    }
+  };
+
+  const deleteCategory = async (categoryId: string) => {
+    try {
+      await categoryService.delete(categoryId);
+      fetchAdminData();
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to delete category');
+    }
+  };
+
   return {
     stats,
     orders,
     products,
     banners,
     announcements,
+    coupons,
+    categories,
     loading,
     error,
     updateOrderStatus,
@@ -255,6 +300,12 @@ export const useAdmin = () => {
     createAnnouncement,
     updateAnnouncement,
     deleteAnnouncement,
+    createCoupon,
+    updateCoupon,
+    deleteCoupon,
+    createCategory,
+    updateCategory,
+    deleteCategory,
     refreshData: fetchAdminData
   };
 };

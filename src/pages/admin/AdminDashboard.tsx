@@ -28,12 +28,20 @@ import {
   FileText,
   Download,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Image,
+  Tag,
+  Percent,
+  Copy,
+  ExternalLink
 } from 'lucide-react';
 import { useAdmin } from '../../hooks/useAdmin';
 import { Order } from '../../types';
 import ProductModal from '../../components/admin/ProductModal';
 import AnnouncementModal from '../../components/admin/AnnouncementModal';
+import BannerModal from '../../components/admin/BannerModal';
+import CouponModal from '../../components/admin/CouponModal';
+import CategoryModal from '../../components/admin/CategoryModal';
 
 interface OrderDetailsModalProps {
   order: Order | null;
@@ -340,6 +348,8 @@ const AdminDashboard: React.FC = () => {
     products,
     banners,
     announcements,
+    coupons,
+    categories,
     loading,
     error,
     updateOrderStatus,
@@ -347,18 +357,33 @@ const AdminDashboard: React.FC = () => {
     createProduct,
     updateProduct,
     deleteProduct,
+    createBanner,
+    updateBanner,
+    deleteBanner,
     createAnnouncement,
     updateAnnouncement,
     deleteAnnouncement,
+    createCoupon,
+    updateCoupon,
+    deleteCoupon,
+    createCategory,
+    updateCategory,
+    deleteCategory,
     refreshData
   } = useAdmin();
 
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedBanner, setSelectedBanner] = useState(null);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+  const [selectedCoupon, setSelectedCoupon] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showProductModal, setShowProductModal] = useState(false);
+  const [showBannerModal, setShowBannerModal] = useState(false);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [showCouponModal, setShowCouponModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -414,6 +439,21 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleBannerSave = async (bannerData: any) => {
+    try {
+      if (selectedBanner) {
+        await updateBanner(selectedBanner.id, bannerData);
+      } else {
+        await createBanner(bannerData);
+      }
+      setShowBannerModal(false);
+      setSelectedBanner(null);
+    } catch (error) {
+      console.error('Error saving banner:', error);
+      throw error;
+    }
+  };
+
   const handleAnnouncementSave = async (announcementData: any) => {
     try {
       if (selectedAnnouncement) {
@@ -425,6 +465,36 @@ const AdminDashboard: React.FC = () => {
       setSelectedAnnouncement(null);
     } catch (error) {
       console.error('Error saving announcement:', error);
+      throw error;
+    }
+  };
+
+  const handleCouponSave = async (couponData: any) => {
+    try {
+      if (selectedCoupon) {
+        await updateCoupon(selectedCoupon.id, couponData);
+      } else {
+        await createCoupon(couponData);
+      }
+      setShowCouponModal(false);
+      setSelectedCoupon(null);
+    } catch (error) {
+      console.error('Error saving coupon:', error);
+      throw error;
+    }
+  };
+
+  const handleCategorySave = async (categoryData: any) => {
+    try {
+      if (selectedCategory) {
+        await updateCategory(selectedCategory.id, categoryData);
+      } else {
+        await createCategory(categoryData);
+      }
+      setShowCategoryModal(false);
+      setSelectedCategory(null);
+    } catch (error) {
+      console.error('Error saving category:', error);
       throw error;
     }
   };
@@ -527,6 +597,22 @@ const AdminDashboard: React.FC = () => {
     product.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const filteredBanners = banners.filter(banner =>
+    banner.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredAnnouncements = announcements.filter(announcement =>
+    announcement.message.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredCoupons = coupons.filter(coupon =>
+    coupon.code.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredCategories = categories.filter(category =>
+    category.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -586,17 +672,20 @@ const AdminDashboard: React.FC = () => {
       {/* Navigation Tabs */}
       <div className="bg-white border-b border-gray-200">
         <div className="container mx-auto px-4">
-          <nav className="flex space-x-8">
+          <nav className="flex space-x-8 overflow-x-auto">
             {[
               { id: 'overview', label: 'Overview', icon: BarChart3 },
               { id: 'orders', label: 'Orders', icon: ShoppingCart, badge: stats.pendingOrders },
               { id: 'products', label: 'Products', icon: Package, badge: stats.lowStockProducts },
-              { id: 'announcements', label: 'Announcements', icon: Megaphone }
+              { id: 'banners', label: 'Banners', icon: Image },
+              { id: 'announcements', label: 'Announcements', icon: Megaphone },
+              { id: 'coupons', label: 'Coupons', icon: Percent },
+              { id: 'categories', label: 'Categories', icon: Tag }
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors relative ${
+                className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors relative whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'border-orange-500 text-orange-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -1050,24 +1139,136 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
 
+        {activeTab === 'banners' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-800">Banner Management</h2>
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search banners..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedBanner(null);
+                    setShowBannerModal(true);
+                  }}
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2"
+                >
+                  <Plus size={18} />
+                  <span>Add Banner</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredBanners.map((banner) => (
+                <div key={banner.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                  <div className="relative h-48">
+                    <img
+                      src={banner.image}
+                      alt={banner.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-4 right-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        banner.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {banner.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                    <div className="absolute top-4 left-4">
+                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                        Order: {banner.order_index}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="p-6">
+                    <h3 className="font-semibold text-gray-800 mb-2">{banner.title}</h3>
+                    {banner.description && (
+                      <p className="text-sm text-gray-600 mb-3">{banner.description.slice(0, 80)}...</p>
+                    )}
+                    
+                    {banner.link && (
+                      <div className="mb-4">
+                        <a
+                          href={banner.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-500 hover:text-blue-600 text-sm flex items-center space-x-1"
+                        >
+                          <ExternalLink size={14} />
+                          <span>View Link</span>
+                        </a>
+                      </div>
+                    )}
+
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => {
+                          setSelectedBanner(banner);
+                          setShowBannerModal(true);
+                        }}
+                        className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-1"
+                      >
+                        <Edit size={14} />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm('Are you sure you want to delete this banner?')) {
+                            deleteBanner(banner.id);
+                          }
+                        }}
+                        className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {activeTab === 'announcements' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-800">Announcements</h2>
-              <button
-                onClick={() => {
-                  setSelectedAnnouncement(null);
-                  setShowAnnouncementModal(true);
-                }}
-                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2"
-              >
-                <Plus size={18} />
-                <span>Add Announcement</span>
-              </button>
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search announcements..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedAnnouncement(null);
+                    setShowAnnouncementModal(true);
+                  }}
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2"
+                >
+                  <Plus size={18} />
+                  <span>Add Announcement</span>
+                </button>
+              </div>
             </div>
 
             <div className="space-y-4">
-              {announcements.map((announcement) => (
+              {filteredAnnouncements.map((announcement) => (
                 <div
                   key={announcement.id}
                   className="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500"
@@ -1120,6 +1321,195 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
         )}
+
+        {activeTab === 'coupons' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-800">Coupon Management</h2>
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search coupons..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedCoupon(null);
+                    setShowCouponModal(true);
+                  }}
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2"
+                >
+                  <Plus size={18} />
+                  <span>Add Coupon</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredCoupons.map((coupon) => (
+                <div key={coupon.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                  <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-bold">{coupon.code}</h3>
+                        <p className="text-sm opacity-90">
+                          {coupon.discount_type === 'percentage' 
+                            ? `${coupon.discount_value}% OFF` 
+                            : `₹${coupon.discount_value} OFF`}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          coupon.is_active ? 'bg-white bg-opacity-20' : 'bg-red-500'
+                        }`}>
+                          {coupon.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4">
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Min. Order:</span>
+                        <span className="font-medium">₹{coupon.min_order_amount}</span>
+                      </div>
+                      {coupon.max_discount && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Max. Discount:</span>
+                          <span className="font-medium">₹{coupon.max_discount}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Valid Until:</span>
+                        <span className="font-medium">
+                          {new Date(coupon.valid_until).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => navigator.clipboard.writeText(coupon.code)}
+                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-1"
+                      >
+                        <Copy size={14} />
+                        <span>Copy</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedCoupon(coupon);
+                          setShowCouponModal(true);
+                        }}
+                        className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg transition-colors"
+                      >
+                        <Edit size={14} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm('Are you sure you want to delete this coupon?')) {
+                            deleteCoupon(coupon.id);
+                          }
+                        }}
+                        className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'categories' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-800">Category Management</h2>
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search categories..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedCategory(null);
+                    setShowCategoryModal(true);
+                  }}
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2"
+                >
+                  <Plus size={18} />
+                  <span>Add Category</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredCategories.map((category) => (
+                <div key={category.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                          <Tag size={24} className="text-orange-500" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-800">{category.name}</h3>
+                          <p className="text-sm text-gray-500">/{category.slug}</p>
+                        </div>
+                      </div>
+                      <span className={`w-3 h-3 rounded-full ${category.is_active ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                    </div>
+                    
+                    {category.description && (
+                      <p className="text-sm text-gray-600 mb-4">{category.description}</p>
+                    )}
+                    
+                    <div className="flex justify-between text-sm text-gray-500 mb-4">
+                      <span>Sort Order: {category.sort_order}</span>
+                      <span>{category.is_active ? 'Active' : 'Inactive'}</span>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => {
+                          setSelectedCategory(category);
+                          setShowCategoryModal(true);
+                        }}
+                        className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-1"
+                      >
+                        <Edit size={14} />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm('Are you sure you want to delete this category?')) {
+                            deleteCategory(category.id);
+                          }
+                        }}
+                        className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modals */}
@@ -1133,6 +1523,16 @@ const AdminDashboard: React.FC = () => {
         product={selectedProduct}
       />
 
+      <BannerModal
+        isOpen={showBannerModal}
+        onClose={() => {
+          setShowBannerModal(false);
+          setSelectedBanner(null);
+        }}
+        onSave={handleBannerSave}
+        banner={selectedBanner}
+      />
+
       <AnnouncementModal
         isOpen={showAnnouncementModal}
         onClose={() => {
@@ -1141,6 +1541,26 @@ const AdminDashboard: React.FC = () => {
         }}
         onSave={handleAnnouncementSave}
         announcement={selectedAnnouncement}
+      />
+
+      <CouponModal
+        isOpen={showCouponModal}
+        onClose={() => {
+          setShowCouponModal(false);
+          setSelectedCoupon(null);
+        }}
+        onSave={handleCouponSave}
+        coupon={selectedCoupon}
+      />
+
+      <CategoryModal
+        isOpen={showCategoryModal}
+        onClose={() => {
+          setShowCategoryModal(false);
+          setSelectedCategory(null);
+        }}
+        onSave={handleCategorySave}
+        category={selectedCategory}
       />
 
       <OrderDetailsModal

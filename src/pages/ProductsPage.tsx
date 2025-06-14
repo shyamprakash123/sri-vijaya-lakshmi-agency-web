@@ -1,16 +1,30 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Search, Filter, Loader2, AlertCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ShoppingCart, MessageCircle } from 'lucide-react';
 import { useProducts } from '../hooks/useProducts';
 import { useCart } from '../hooks/useCart';
 import { SearchFilters } from '../types';
 
 const ProductsPage: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all');
   const [sortBy, setSortBy] = useState<SearchFilters['sortBy']>('name');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
+
+  // Update search term from URL params
+  useEffect(() => {
+    const urlSearch = searchParams.get('search');
+    const urlCategory = searchParams.get('category');
+    
+    if (urlSearch) {
+      setSearchTerm(urlSearch);
+    }
+    if (urlCategory) {
+      setSelectedCategory(urlCategory);
+    }
+  }, [searchParams]);
 
   const filters = useMemo(() => ({
     search: searchTerm,
@@ -49,6 +63,24 @@ const ProductsPage: React.FC = () => {
     return `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
   };
 
+  // Update URL when filters change
+  const updateURL = (newSearchTerm: string, newCategory: string) => {
+    const params = new URLSearchParams();
+    if (newSearchTerm) params.set('search', newSearchTerm);
+    if (newCategory && newCategory !== 'all') params.set('category', newCategory);
+    setSearchParams(params);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    updateURL(value, selectedCategory);
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategory(value);
+    updateURL(searchTerm, value);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Page Header */}
@@ -67,7 +99,7 @@ const ProductsPage: React.FC = () => {
               type="text"
               placeholder="Search products..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>
@@ -77,7 +109,7 @@ const ProductsPage: React.FC = () => {
             <Filter size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <select
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              onChange={(e) => handleCategoryChange(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 appearance-none bg-white"
             >
               {categories.map(category => (
@@ -229,7 +261,19 @@ const ProductsPage: React.FC = () => {
           ) : (
             <div className="text-center py-12">
               <h3 className="text-xl font-semibold text-gray-600 mb-4">No products found</h3>
-              <p className="text-gray-500">Try adjusting your search or filter criteria</p>
+              <p className="text-gray-500 mb-6">Try adjusting your search or filter criteria</p>
+              {(searchTerm || selectedCategory !== 'all') && (
+                <button
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedCategory('all');
+                    updateURL('', 'all');
+                  }}
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
+                >
+                  Clear Filters
+                </button>
+              )}
             </div>
           )}
         </>
