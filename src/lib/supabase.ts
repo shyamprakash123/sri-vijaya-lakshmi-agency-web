@@ -60,6 +60,38 @@ export const productService = {
 
     if (error) throw error;
     return data;
+  },
+
+  async create(product: any) {
+    const { data, error } = await supabase
+      .from('products')
+      .insert(product)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async update(id: string, updates: any) {
+    const { data, error } = await supabase
+      .from('products')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async delete(id: string) {
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
   }
 };
 
@@ -73,6 +105,38 @@ export const bannerService = {
 
     if (error) throw error;
     return data;
+  },
+
+  async create(banner: any) {
+    const { data, error } = await supabase
+      .from('banners')
+      .insert(banner)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async update(id: string, updates: any) {
+    const { data, error } = await supabase
+      .from('banners')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async delete(id: string) {
+    const { error } = await supabase
+      .from('banners')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
   }
 };
 
@@ -94,9 +158,15 @@ export const orderService = {
   }) {
     const { items, ...order } = orderData;
     
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    
     const { data: orderResult, error: orderError } = await supabase
       .from('orders')
-      .insert(order)
+      .insert({
+        ...order,
+        user_id: user?.id || null
+      })
       .select()
       .single();
 
@@ -128,6 +198,39 @@ export const orderService = {
       `)
       .eq('id', id)
       .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getUserOrders(userId: string) {
+    const { data, error } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        order_items (
+          *,
+          products (*)
+        )
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getAll() {
+    const { data, error } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        order_items (
+          *,
+          products (*)
+        )
+      `)
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
     return data;
@@ -170,5 +273,89 @@ export const couponService = {
 
     if (error) throw error;
     return data;
+  }
+};
+
+// Cart service for session storage
+export const cartService = {
+  async saveCart(userId: string, cartItems: any[]) {
+    const { data, error } = await supabase
+      .from('user_sessions')
+      .upsert({
+        user_id: userId,
+        cart_data: cartItems,
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getCart(userId: string) {
+    const { data, error } = await supabase
+      .from('user_sessions')
+      .select('cart_data')
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    return data?.cart_data || [];
+  },
+
+  async clearCart(userId: string) {
+    const { error } = await supabase
+      .from('user_sessions')
+      .update({ cart_data: [] })
+      .eq('user_id', userId);
+
+    if (error) throw error;
+  }
+};
+
+// Announcement service
+export const announcementService = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from('announcements')
+      .select('*')
+      .eq('is_active', true)
+      .order('priority', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async create(announcement: any) {
+    const { data, error } = await supabase
+      .from('announcements')
+      .insert(announcement)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async update(id: string, updates: any) {
+    const { data, error } = await supabase
+      .from('announcements')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async delete(id: string) {
+    const { error } = await supabase
+      .from('announcements')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
   }
 };

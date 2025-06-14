@@ -13,8 +13,12 @@ import PreOrderPage from './pages/PreOrderPage';
 import TrackOrderPage from './pages/TrackOrderPage';
 import ContactPage from './pages/ContactPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import Toast from './components/ui/Toast';
+import { useToast } from './hooks/useToast';
 
 function App() {
+  const { toasts } = useToast();
+
   return (
     <Router>
       <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -36,6 +40,13 @@ function App() {
           </Routes>
         </main>
         <Footer />
+        
+        {/* Toast Container */}
+        <div className="fixed top-4 right-4 z-50 space-y-2">
+          {toasts.map(toast => (
+            <Toast key={toast.id} {...toast} />
+          ))}
+        </div>
       </div>
     </Router>
   );

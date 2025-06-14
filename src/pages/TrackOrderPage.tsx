@@ -1,40 +1,36 @@
-import React, { useState } from 'react';
-import { Search, Package, Clock, CheckCircle, Truck, MapPin, Phone, Mail } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Package, Clock, CheckCircle, Truck, MapPin, Phone, Mail, Loader2, AlertCircle } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { orderService } from '../lib/supabase';
+import { Order } from '../types';
 
 const TrackOrderPage: React.FC = () => {
   const [orderId, setOrderId] = useState('');
-  const [orderData, setOrderData] = useState<any>(null);
+  const [orderData, setOrderData] = useState<Order | null>(null);
+  const [userOrders, setUserOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [loadingUserOrders, setLoadingUserOrders] = useState(false);
+  
+  const { user } = useAuth();
 
-  const mockOrders = {
-    'SVL001': {
-      id: 'SVL001',
-      status: 'dispatched',
-      items: [
-        { name: 'Premium Basmati Rice', quantity: 2, weight: '25kg' },
-        { name: 'Sona Masoori Rice', quantity: 1, weight: '25kg' }
-      ],
-      total: 2400,
-      orderDate: '2024-01-15T10:30:00Z',
-      estimatedDelivery: '2024-01-15T12:30:00Z',
-      deliveryAddress: '123 Main Street, Chennai, Tamil Nadu 600001',
-      porter: {
-        name: 'Rajesh Kumar',
-        phone: '+91 98765 43210',
-        vehicle: 'TN 01 AB 1234'
-      }
-    },
-    'SVL002': {
-      id: 'SVL002',
-      status: 'delivered',
-      items: [
-        { name: 'Jasmine Rice', quantity: 3, weight: '25kg' }
-      ],
-      total: 2850,
-      orderDate: '2024-01-14T14:20:00Z',
-      deliveredAt: '2024-01-14T15:45:00Z',
-      deliveryAddress: '456 Park Avenue, Chennai, Tamil Nadu 600002'
+  useEffect(() => {
+    if (user) {
+      fetchUserOrders();
+    }
+  }, [user]);
+
+  const fetchUserOrders = async () => {
+    if (!user) return;
+    
+    setLoadingUserOrders(true);
+    try {
+      const orders = await orderService.getUserOrders(user.id);
+      setUserOrders(orders);
+    } catch (error) {
+      console.error('Failed to fetch user orders:', error);
+    } finally {
+      setLoadingUserOrders(false);
     }
   };
 
@@ -47,24 +43,23 @@ const TrackOrderPage: React.FC = () => {
     setLoading(true);
     setError('');
 
-    // Simulate API call
-    setTimeout(() => {
-      const order = mockOrders[orderId as keyof typeof mockOrders];
-      if (order) {
-        setOrderData(order);
-      } else {
-        setError('Order not found. Please check your order ID and try again.');
-        setOrderData(null);
-      }
+    try {
+      const order = await orderService.getById(orderId);
+      setOrderData(order);
+    } catch (err) {
+      setError('Order not found. Please check your order ID and try again.');
+      setOrderData(null);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
         return <Clock className="w-6 h-6 text-yellow-500" />;
-      case 'confirmed':
+      case 'prepaid':
+      case 'fully_paid':
         return <CheckCircle className="w-6 h-6 text-blue-500" />;
       case 'dispatched':
         return <Truck className="w-6 h-6 text-purple-500" />;
@@ -78,9 +73,11 @@ const TrackOrderPage: React.FC = () => {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'pending':
-        return 'Order Pending';
-      case 'confirmed':
-        return 'Order Confirmed';
+        return 'Payment Pending';
+      case 'prepaid':
+        return 'Partially Paid (Pre-order)';
+      case 'fully_paid':
+        return 'Payment Completed';
       case 'dispatched':
         return 'Out for Delivery';
       case 'delivered':
@@ -94,7 +91,8 @@ const TrackOrderPage: React.FC = () => {
     switch (status) {
       case 'pending':
         return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'confirmed':
+      case 'prepaid':
+      case 'fully_paid':
         return 'text-blue-600 bg-blue-50 border-blue-200';
       case 'dispatched':
         return 'text-purple-600 bg-purple-50 border-purple-200';
@@ -121,7 +119,7 @@ const TrackOrderPage: React.FC = () => {
               <div className="flex-1">
                 <input
                   type="text"
-                  placeholder="Enter Order ID (e.g., SVL001)"
+                  placeholder="Enter Order ID"
                   value={orderId}
                   onChange={(e) => setOrderId(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -134,7 +132,7 @@ const TrackOrderPage: React.FC = () => {
                 className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
               >
                 {loading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <Search size={20} />
                 )}
@@ -150,7 +148,7 @@ const TrackOrderPage: React.FC = () => {
 
         {/* Order Details */}
         {orderData && (
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto mb-12">
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
               {/* Order Header */}
               <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white p-6">
@@ -158,7 +156,7 @@ const TrackOrderPage: React.FC = () => {
                   <div>
                     <h2 className="text-2xl font-bold">Order #{orderData.id}</h2>
                     <p className="opacity-90">
-                      Placed on {new Date(orderData.orderDate).toLocaleDateString('en-IN', {
+                      Placed on {new Date(orderData.created_at).toLocaleDateString('en-IN', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
@@ -168,29 +166,21 @@ const TrackOrderPage: React.FC = () => {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold">₹{orderData.total}</p>
-                    <p className="opacity-90">{orderData.items.length} item(s)</p>
+                    <p className="text-2xl font-bold">₹{orderData.total_amount}</p>
+                    <p className="opacity-90">{orderData.order_items?.length || 0} item(s)</p>
                   </div>
                 </div>
               </div>
 
               {/* Status */}
               <div className="p-6 border-b border-gray-200">
-                <div className={`flex items-center space-x-3 p-4 rounded-lg border ${getStatusColor(orderData.status)}`}>
-                  {getStatusIcon(orderData.status)}
+                <div className={`flex items-center space-x-3 p-4 rounded-lg border ${getStatusColor(orderData.order_status)}`}>
+                  {getStatusIcon(orderData.order_status)}
                   <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{getStatusText(orderData.status)}</h3>
-                    {orderData.status === 'dispatched' && orderData.estimatedDelivery && (
+                    <h3 className="font-semibold text-lg">{getStatusText(orderData.order_status)}</h3>
+                    {orderData.scheduled_delivery && (
                       <p className="text-sm opacity-75">
-                        Estimated delivery: {new Date(orderData.estimatedDelivery).toLocaleTimeString('en-IN', {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                    )}
-                    {orderData.status === 'delivered' && orderData.deliveredAt && (
-                      <p className="text-sm opacity-75">
-                        Delivered on {new Date(orderData.deliveredAt).toLocaleDateString('en-IN', {
+                        Scheduled for: {new Date(orderData.scheduled_delivery).toLocaleDateString('en-IN', {
                           month: 'long',
                           day: 'numeric',
                           hour: '2-digit',
@@ -207,14 +197,15 @@ const TrackOrderPage: React.FC = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Order Items</h3>
                   <div className="space-y-3">
-                    {orderData.items.map((item: any, index: number) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    {orderData.order_items?.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div>
-                          <p className="font-medium text-gray-800">{item.name}</p>
-                          <p className="text-sm text-gray-600">{item.weight}</p>
+                          <p className="font-medium text-gray-800">{item.products?.name}</p>
+                          <p className="text-sm text-gray-600">{item.products?.weight} • {item.slab_label}</p>
                         </div>
                         <div className="text-right">
                           <p className="font-semibold">Qty: {item.quantity}</p>
+                          <p className="text-sm text-gray-600">₹{item.price_per_bag * item.quantity}</p>
                         </div>
                       </div>
                     ))}
@@ -229,32 +220,73 @@ const TrackOrderPage: React.FC = () => {
                       <MapPin size={20} className="text-orange-500 mt-1" />
                       <div>
                         <p className="font-medium text-gray-800">Delivery Address</p>
-                        <p className="text-gray-600">{orderData.deliveryAddress}</p>
+                        <p className="text-gray-600">{orderData.delivery_address.fullAddress}</p>
+                        <p className="text-gray-600">Pincode: {orderData.delivery_address.pincode}</p>
+                        {orderData.delivery_address.landmark && (
+                          <p className="text-gray-600">Landmark: {orderData.delivery_address.landmark}</p>
+                        )}
                       </div>
                     </div>
-
-                    {orderData.porter && (
-                      <div className="bg-blue-50 p-4 rounded-lg">
-                        <h4 className="font-semibold text-blue-800 mb-2">Porter Details</h4>
-                        <div className="space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <Package size={16} className="text-blue-600" />
-                            <span className="text-sm text-blue-700">Driver: {orderData.porter.name}</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Phone size={16} className="text-blue-600" />
-                            <span className="text-sm text-blue-700">{orderData.porter.phone}</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Truck size={16} className="text-blue-600" />
-                            <span className="text-sm text-blue-700">Vehicle: {orderData.porter.vehicle}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* User Orders Section */}
+        {user && (
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-gray-800">Your Recent Orders</h3>
+                <button
+                  onClick={fetchUserOrders}
+                  disabled={loadingUserOrders}
+                  className="text-orange-500 hover:text-orange-600 font-medium transition-colors"
+                >
+                  {loadingUserOrders ? 'Refreshing...' : 'Refresh'}
+                </button>
+              </div>
+
+              {loadingUserOrders ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+                </div>
+              ) : userOrders.length > 0 ? (
+                <div className="space-y-4">
+                  {userOrders.map((order) => (
+                    <div
+                      key={order.id}
+                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => {
+                        setOrderId(order.id);
+                        setOrderData(order);
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-gray-800">#{order.id}</p>
+                          <p className="text-sm text-gray-600">
+                            {new Date(order.created_at).toLocaleDateString('en-IN')}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-gray-800">₹{order.total_amount}</p>
+                          <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.order_status)}`}>
+                            {getStatusText(order.order_status)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Package size={48} className="mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-600">No orders found</p>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -283,27 +315,6 @@ const TrackOrderPage: React.FC = () => {
                 <Mail size={18} />
                 <span>Email Support</span>
               </a>
-            </div>
-          </div>
-        </div>
-
-        {/* Sample Order IDs */}
-        <div className="max-w-md mx-auto mt-8">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h4 className="font-semibold text-yellow-800 mb-2">Try these sample Order IDs:</h4>
-            <div className="space-y-1">
-              <button
-                onClick={() => setOrderId('SVL001')}
-                className="block w-full text-left text-yellow-700 hover:text-yellow-900 font-mono text-sm"
-              >
-                SVL001 - Out for delivery
-              </button>
-              <button
-                onClick={() => setOrderId('SVL002')}
-                className="block w-full text-left text-yellow-700 hover:text-yellow-900 font-mono text-sm"
-              >
-                SVL002 - Delivered
-              </button>
             </div>
           </div>
         </div>

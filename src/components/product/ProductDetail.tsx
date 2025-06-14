@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShoppingCart, MessageCircle, Package, Truck, Shield, Loader2, AlertCircle } from 'lucide-react';
+import { ShoppingCart, MessageCircle, Package, Truck, Shield, Loader2, AlertCircle, Store } from 'lucide-react';
 import { useProduct } from '../../hooks/useProducts';
 import { useCart } from '../../hooks/useCart';
+import { useToast } from '../../hooks/useToast';
 import { PriceSlab } from '../../types';
 
 const ProductDetail: React.FC = () => {
@@ -12,6 +13,7 @@ const ProductDetail: React.FC = () => {
   const [selectedSlab, setSelectedSlab] = useState<PriceSlab | null>(null);
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
+  const { success } = useToast();
 
   useEffect(() => {
     if (product && product.price_slabs && product.price_slabs.length > 0) {
@@ -35,8 +37,14 @@ const ProductDetail: React.FC = () => {
   const handleAddToCart = () => {
     if (product && selectedSlab) {
       addToCart(product, quantity, selectedSlab);
-      // Show success message or redirect to cart
-      navigate('/cart');
+      success('Added to Cart', `${quantity} bags of ${product.name} added to your cart`);
+    }
+  };
+
+  const handleBuyNow = () => {
+    if (product && selectedSlab) {
+      addToCart(product, quantity, selectedSlab);
+      navigate('/checkout');
     }
   };
 
@@ -190,14 +198,25 @@ const ProductDetail: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            <button
-              onClick={handleAddToCart}
-              disabled={!selectedSlab || product.available_quantity === 0}
-              className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2"
-            >
-              <ShoppingCart size={20} />
-              <span>Add to Cart</span>
-            </button>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={handleAddToCart}
+                disabled={!selectedSlab || product.available_quantity === 0}
+                className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2"
+              >
+                <ShoppingCart size={20} />
+                <span>Add to Cart</span>
+              </button>
+              
+              <button
+                onClick={handleBuyNow}
+                disabled={!selectedSlab || product.available_quantity === 0}
+                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2"
+              >
+                <Store size={20} />
+                <span>Buy Now</span>
+              </button>
+            </div>
             
             <a
               href={getWhatsAppLink()}

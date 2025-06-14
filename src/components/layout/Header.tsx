@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingCart, Menu, User, Phone, Search } from 'lucide-react';
+import { ShoppingCart, Menu, User, Phone, Search, LogOut } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
+import { useAuth } from '../../hooks/useAuth';
+import { useToast } from '../../hooks/useToast';
 import AuthModal from '../auth/AuthModal';
 import CartSlider from '../cart/CartSlider';
 
 const Header: React.FC = () => {
   const location = useLocation();
   const { getTotalItems } = useCart();
+  const { user, signOut } = useAuth();
+  const { success } = useToast();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Mock auth state
 
   const navItems = [
     { name: 'Home', path: '/' },
@@ -25,6 +28,15 @@ const Header: React.FC = () => {
   const handleAuthClick = (mode: 'login' | 'signup') => {
     setAuthMode(mode);
     setIsAuthModalOpen(true);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      success('Signed out successfully', 'You have been logged out of your account.');
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
   };
 
   return (
@@ -65,9 +77,12 @@ const Header: React.FC = () => {
             {/* Right Side Actions */}
             <div className="flex items-center space-x-4">
               {/* Search - Desktop only */}
-              <button className="hidden md:flex items-center space-x-2 text-gray-600 hover:text-orange-500 transition-colors">
+              <Link 
+                to="/products"
+                className="hidden md:flex items-center space-x-2 text-gray-600 hover:text-orange-500 transition-colors"
+              >
                 <Search size={20} />
-              </button>
+              </Link>
 
               {/* WhatsApp Contact */}
               <a
@@ -81,7 +96,7 @@ const Header: React.FC = () => {
               </a>
 
               {/* Auth Buttons */}
-              {!isLoggedIn ? (
+              {!user ? (
                 <div className="hidden md:flex items-center space-x-2">
                   <button
                     onClick={() => handleAuthClick('login')}
@@ -103,8 +118,17 @@ const Header: React.FC = () => {
                     <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center">
                       <User size={16} className="text-white" />
                     </div>
-                    <span className="text-sm font-medium text-gray-700">John Doe</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      {user.user_metadata?.name || user.email?.split('@')[0]}
+                    </span>
                   </div>
+                  <button
+                    onClick={handleSignOut}
+                    className="text-gray-500 hover:text-red-500 transition-colors"
+                    title="Sign Out"
+                  >
+                    <LogOut size={18} />
+                  </button>
                 </div>
               )}
 
@@ -149,7 +173,7 @@ const Header: React.FC = () => {
                 ))}
                 
                 {/* Mobile Auth Buttons */}
-                {!isLoggedIn ? (
+                {!user ? (
                   <div className="flex flex-col space-y-2 pt-4 border-t border-gray-200">
                     <button
                       onClick={() => {
@@ -172,11 +196,24 @@ const Header: React.FC = () => {
                   </div>
                 ) : (
                   <div className="pt-4 border-t border-gray-200">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center">
-                        <User size={16} className="text-white" />
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center">
+                          <User size={16} className="text-white" />
+                        </div>
+                        <span className="font-medium text-gray-700">
+                          {user.user_metadata?.name || user.email?.split('@')[0]}
+                        </span>
                       </div>
-                      <span className="font-medium text-gray-700">John Doe</span>
+                      <button
+                        onClick={() => {
+                          handleSignOut();
+                          setIsMenuOpen(false);
+                        }}
+                        className="text-red-500 hover:text-red-600 transition-colors"
+                      >
+                        <LogOut size={18} />
+                      </button>
                     </div>
                   </div>
                 )}

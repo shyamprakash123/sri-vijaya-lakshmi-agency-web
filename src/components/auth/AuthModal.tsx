@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { X, Mail, Lock, User, Phone, Eye, EyeOff } from 'lucide-react';
+import { X, Mail, Lock, User, Phone, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import { useToast } from '../../hooks/useToast';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -19,6 +21,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+
+  const { signUp, signIn } = useAuth();
+  const { success, error: showError } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -61,14 +66,18 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
 
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (mode === 'signup') {
+        await signUp(formData.email, formData.password, formData.name, formData.phone);
+        success(
+          'Account Created!', 
+          'Please check your email to confirm your account before signing in.'
+        );
+      } else {
+        await signIn(formData.email, formData.password);
+        success('Welcome back!', 'You have been successfully signed in.');
+      }
       
-      // Mock success
-      console.log(`${mode} successful:`, formData);
       onClose();
-      
-      // Reset form
       setFormData({
         name: '',
         email: '',
@@ -76,8 +85,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
         password: '',
         confirmPassword: ''
       });
-    } catch (error) {
-      setErrors({ submit: 'Authentication failed. Please try again.' });
+    } catch (err: any) {
+      showError(
+        mode === 'signup' ? 'Sign Up Failed' : 'Sign In Failed',
+        err.message || 'An unexpected error occurred. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
@@ -226,12 +238,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             </div>
           )}
 
-          {errors.submit && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600 text-sm">{errors.submit}</p>
-            </div>
-          )}
-
           <button
             type="submit"
             disabled={loading}
@@ -239,7 +245,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
           >
             {loading ? (
               <div className="flex items-center justify-center space-x-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <Loader2 className="w-4 h-4 animate-spin" />
                 <span>{mode === 'login' ? 'Signing In...' : 'Creating Account...'}</span>
               </div>
             ) : (
