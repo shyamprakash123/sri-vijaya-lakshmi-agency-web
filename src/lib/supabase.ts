@@ -35,6 +35,19 @@ export const productService = {
     return data;
   },
 
+  async getAllAdmin() {
+    const { data, error } = await supabase
+      .from('products')
+      .select(`
+        *,
+        price_slabs (*)
+      `)
+      .order('name');
+
+    if (error) throw error;
+    return data;
+  },
+
   async getById(id: string) {
     const { data, error } = await supabase
       .from('products')
@@ -142,6 +155,16 @@ export const bannerService = {
       .from('banners')
       .select('*')
       .eq('is_active', true)
+      .order('order_index');
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getAllAdmin() {
+    const { data, error } = await supabase
+      .from('banners')
+      .select('*')
       .order('order_index');
 
     if (error) throw error;
@@ -310,6 +333,18 @@ export const couponService = {
     const { data, error } = await supabase
       .from('coupons')
       .select('*')
+      .eq('is_active', true)
+      .gte('valid_until', new Date().toISOString())
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getAllAdmin() {
+    const { data, error } = await supabase
+      .from('coupons')
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -393,6 +428,17 @@ export const announcementService = {
     const { data, error } = await supabase
       .from('announcements')
       .select('*')
+      .eq('is_active', true)
+      .order('priority', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getAllAdmin() {
+    const { data, error } = await supabase
+      .from('announcements')
+      .select('*')
       .order('priority', { ascending: false });
 
     if (error) throw error;
@@ -439,6 +485,16 @@ export const categoryService = {
       .from('categories')
       .select('*')
       .eq('is_active', true)
+      .order('sort_order');
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getAllAdmin() {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
       .order('sort_order');
 
     if (error) throw error;

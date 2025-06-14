@@ -60,14 +60,20 @@ export const useAdmin = () => {
       setLoading(true);
       setError(null);
 
+      // Check if user is authenticated and has admin role
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Authentication required');
+      }
+
       // Fetch all data in parallel
       const [ordersData, productsData, bannersData, announcementsData, couponsData, categoriesData] = await Promise.all([
         orderService.getAll(),
-        productService.getAll(),
-        bannerService.getAll(),
-        announcementService.getAll(),
-        couponService.getAll(),
-        categoryService.getAll()
+        productService.getAllAdmin(), // Use admin version
+        bannerService.getAllAdmin(), // Use admin version
+        announcementService.getAllAdmin(), // Use admin version
+        couponService.getAllAdmin(), // Use admin version
+        categoryService.getAllAdmin() // Use admin version
       ]);
 
       setOrders(ordersData);
@@ -120,6 +126,7 @@ export const useAdmin = () => {
       });
 
     } catch (err) {
+      console.error('Admin data fetch error:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch admin data');
     } finally {
       setLoading(false);
@@ -129,8 +136,9 @@ export const useAdmin = () => {
   const updateOrderStatus = async (orderId: string, status: string) => {
     try {
       await orderService.updateStatus(orderId, status);
-      fetchAdminData();
+      await fetchAdminData(); // Refresh data
     } catch (err) {
+      console.error('Update order status error:', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to update order status');
     }
   };
@@ -138,8 +146,9 @@ export const useAdmin = () => {
   const updateProductStock = async (productId: string, quantity: number) => {
     try {
       await productService.updateQuantity(productId, quantity);
-      fetchAdminData();
+      await fetchAdminData(); // Refresh data
     } catch (err) {
+      console.error('Update product stock error:', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to update product stock');
     }
   };
@@ -147,8 +156,9 @@ export const useAdmin = () => {
   const createProduct = async (productData: any) => {
     try {
       await productService.create(productData);
-      fetchAdminData();
+      await fetchAdminData(); // Refresh data
     } catch (err) {
+      console.error('Create product error:', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to create product');
     }
   };
@@ -156,8 +166,9 @@ export const useAdmin = () => {
   const updateProduct = async (productId: string, updates: any) => {
     try {
       await productService.update(productId, updates);
-      fetchAdminData();
+      await fetchAdminData(); // Refresh data
     } catch (err) {
+      console.error('Update product error:', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to update product');
     }
   };
@@ -165,8 +176,9 @@ export const useAdmin = () => {
   const deleteProduct = async (productId: string) => {
     try {
       await productService.delete(productId);
-      fetchAdminData();
+      await fetchAdminData(); // Refresh data
     } catch (err) {
+      console.error('Delete product error:', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to delete product');
     }
   };
@@ -174,8 +186,9 @@ export const useAdmin = () => {
   const createBanner = async (bannerData: any) => {
     try {
       await bannerService.create(bannerData);
-      fetchAdminData();
+      await fetchAdminData(); // Refresh data
     } catch (err) {
+      console.error('Create banner error:', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to create banner');
     }
   };
@@ -183,8 +196,9 @@ export const useAdmin = () => {
   const updateBanner = async (bannerId: string, updates: any) => {
     try {
       await bannerService.update(bannerId, updates);
-      fetchAdminData();
+      await fetchAdminData(); // Refresh data
     } catch (err) {
+      console.error('Update banner error:', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to update banner');
     }
   };
@@ -192,8 +206,9 @@ export const useAdmin = () => {
   const deleteBanner = async (bannerId: string) => {
     try {
       await bannerService.delete(bannerId);
-      fetchAdminData();
+      await fetchAdminData(); // Refresh data
     } catch (err) {
+      console.error('Delete banner error:', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to delete banner');
     }
   };
@@ -201,8 +216,9 @@ export const useAdmin = () => {
   const createAnnouncement = async (announcementData: any) => {
     try {
       await announcementService.create(announcementData);
-      fetchAdminData();
+      await fetchAdminData(); // Refresh data
     } catch (err) {
+      console.error('Create announcement error:', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to create announcement');
     }
   };
@@ -210,8 +226,9 @@ export const useAdmin = () => {
   const updateAnnouncement = async (announcementId: string, updates: any) => {
     try {
       await announcementService.update(announcementId, updates);
-      fetchAdminData();
+      await fetchAdminData(); // Refresh data
     } catch (err) {
+      console.error('Update announcement error:', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to update announcement');
     }
   };
@@ -219,8 +236,9 @@ export const useAdmin = () => {
   const deleteAnnouncement = async (announcementId: string) => {
     try {
       await announcementService.delete(announcementId);
-      fetchAdminData();
+      await fetchAdminData(); // Refresh data
     } catch (err) {
+      console.error('Delete announcement error:', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to delete announcement');
     }
   };
@@ -228,8 +246,9 @@ export const useAdmin = () => {
   const createCoupon = async (couponData: any) => {
     try {
       await couponService.create(couponData);
-      fetchAdminData();
+      await fetchAdminData(); // Refresh data
     } catch (err) {
+      console.error('Create coupon error:', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to create coupon');
     }
   };
@@ -237,8 +256,9 @@ export const useAdmin = () => {
   const updateCoupon = async (couponId: string, updates: any) => {
     try {
       await couponService.update(couponId, updates);
-      fetchAdminData();
+      await fetchAdminData(); // Refresh data
     } catch (err) {
+      console.error('Update coupon error:', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to update coupon');
     }
   };
@@ -246,8 +266,9 @@ export const useAdmin = () => {
   const deleteCoupon = async (couponId: string) => {
     try {
       await couponService.delete(couponId);
-      fetchAdminData();
+      await fetchAdminData(); // Refresh data
     } catch (err) {
+      console.error('Delete coupon error:', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to delete coupon');
     }
   };
@@ -255,8 +276,9 @@ export const useAdmin = () => {
   const createCategory = async (categoryData: any) => {
     try {
       await categoryService.create(categoryData);
-      fetchAdminData();
+      await fetchAdminData(); // Refresh data
     } catch (err) {
+      console.error('Create category error:', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to create category');
     }
   };
@@ -264,8 +286,9 @@ export const useAdmin = () => {
   const updateCategory = async (categoryId: string, updates: any) => {
     try {
       await categoryService.update(categoryId, updates);
-      fetchAdminData();
+      await fetchAdminData(); // Refresh data
     } catch (err) {
+      console.error('Update category error:', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to update category');
     }
   };
@@ -273,8 +296,9 @@ export const useAdmin = () => {
   const deleteCategory = async (categoryId: string) => {
     try {
       await categoryService.delete(categoryId);
-      fetchAdminData();
+      await fetchAdminData(); // Refresh data
     } catch (err) {
+      console.error('Delete category error:', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to delete category');
     }
   };

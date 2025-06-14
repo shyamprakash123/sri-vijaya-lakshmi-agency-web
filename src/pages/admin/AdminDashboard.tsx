@@ -27,6 +27,7 @@ import AnnouncementModal from '../../components/admin/AnnouncementModal';
 import CouponModal from '../../components/admin/CouponModal';
 import CategoryModal from '../../components/admin/CategoryModal';
 import OrderDetailsModal from '../../components/admin/OrderDetailsModal';
+import toast from 'react-hot-toast';
 
 const AdminDashboard: React.FC = () => {
   const {
@@ -82,13 +83,14 @@ const AdminDashboard: React.FC = () => {
     { id: 'coupons', label: 'Coupons', icon: Percent }
   ];
 
-  const handleAction = async (action: () => Promise<void>) => {
+  const handleAction = async (action: () => Promise<void>, successMessage: string) => {
     try {
       setActionLoading(true);
       await action();
-      refreshData();
+      toast.success(successMessage);
     } catch (error) {
       console.error('Action failed:', error);
+      toast.error(error instanceof Error ? error.message : 'Action failed');
     } finally {
       setActionLoading(false);
     }
@@ -302,7 +304,10 @@ const AdminDashboard: React.FC = () => {
                       </button>
                       <select
                         value={order.order_status}
-                        onChange={(e) => handleAction(() => updateOrderStatus(order.id, e.target.value))}
+                        onChange={(e) => handleAction(
+                          () => updateOrderStatus(order.id, e.target.value),
+                          'Order status updated successfully'
+                        )}
                         className="text-sm border border-gray-300 rounded px-2 py-1 min-w-[120px]"
                         disabled={actionLoading}
                       >
@@ -383,7 +388,10 @@ const AdminDashboard: React.FC = () => {
                     <input
                       type="number"
                       value={product.available_quantity}
-                      onChange={(e) => handleAction(() => updateProductStock(product.id, parseInt(e.target.value)))}
+                      onChange={(e) => handleAction(
+                        () => updateProductStock(product.id, parseInt(e.target.value)),
+                        'Product stock updated successfully'
+                      )}
                       className="w-20 px-2 py-1 text-sm border border-gray-300 rounded"
                       disabled={actionLoading}
                     />
@@ -403,7 +411,10 @@ const AdminDashboard: React.FC = () => {
                       <Edit size={16} />
                     </button>
                     <button
-                      onClick={() => handleAction(() => deleteProduct(product.id))}
+                      onClick={() => handleAction(
+                        () => deleteProduct(product.id),
+                        'Product deleted successfully'
+                      )}
                       className="text-red-600 hover:text-red-900"
                       disabled={actionLoading}
                     >
@@ -466,7 +477,10 @@ const AdminDashboard: React.FC = () => {
                   <Edit size={16} />
                 </button>
                 <button
-                  onClick={() => handleAction(() => deleteCategory(category.id))}
+                  onClick={() => handleAction(
+                    () => deleteCategory(category.id),
+                    'Category deleted successfully'
+                  )}
                   className="text-red-600 hover:text-red-900"
                   disabled={actionLoading}
                 >
@@ -519,7 +533,10 @@ const AdminDashboard: React.FC = () => {
                     <Edit size={16} />
                   </button>
                   <button
-                    onClick={() => handleAction(() => deleteBanner(banner.id))}
+                    onClick={() => handleAction(
+                      () => deleteBanner(banner.id),
+                      'Banner deleted successfully'
+                    )}
                     className="text-red-600 hover:text-red-900"
                     disabled={actionLoading}
                   >
@@ -578,7 +595,10 @@ const AdminDashboard: React.FC = () => {
                   <Edit size={16} />
                 </button>
                 <button
-                  onClick={() => handleAction(() => deleteAnnouncement(announcement.id))}
+                  onClick={() => handleAction(
+                    () => deleteAnnouncement(announcement.id),
+                    'Announcement deleted successfully'
+                  )}
                   className="text-red-600 hover:text-red-900"
                   disabled={actionLoading}
                 >
@@ -637,7 +657,10 @@ const AdminDashboard: React.FC = () => {
                 <Edit size={16} />
               </button>
               <button
-                onClick={() => handleAction(() => deleteCoupon(coupon.id))}
+                onClick={() => handleAction(
+                  () => deleteCoupon(coupon.id),
+                  'Coupon deleted successfully'
+                )}
                 className="text-red-600 hover:text-red-900"
                 disabled={actionLoading}
               >
@@ -664,7 +687,13 @@ const AdminDashboard: React.FC = () => {
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-800 mb-2">Error loading dashboard</h2>
-          <p className="text-gray-600">{error}</p>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={refreshData}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-colors"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -718,8 +747,14 @@ const AdminDashboard: React.FC = () => {
         isOpen={productModal.isOpen}
         onClose={() => setProductModal({ isOpen: false, product: null })}
         onSave={productModal.product ? 
-          (data) => handleAction(() => updateProduct(productModal.product.id, data)) :
-          (data) => handleAction(() => createProduct(data))
+          (data) => handleAction(
+            () => updateProduct(productModal.product.id, data),
+            'Product updated successfully'
+          ) :
+          (data) => handleAction(
+            () => createProduct(data),
+            'Product created successfully'
+          )
         }
         product={productModal.product}
         loading={actionLoading}
@@ -729,8 +764,14 @@ const AdminDashboard: React.FC = () => {
         isOpen={bannerModal.isOpen}
         onClose={() => setBannerModal({ isOpen: false, banner: null })}
         onSave={bannerModal.banner ? 
-          (data) => handleAction(() => updateBanner(bannerModal.banner.id, data)) :
-          (data) => handleAction(() => createBanner(data))
+          (data) => handleAction(
+            () => updateBanner(bannerModal.banner.id, data),
+            'Banner updated successfully'
+          ) :
+          (data) => handleAction(
+            () => createBanner(data),
+            'Banner created successfully'
+          )
         }
         banner={bannerModal.banner}
         loading={actionLoading}
@@ -740,8 +781,14 @@ const AdminDashboard: React.FC = () => {
         isOpen={announcementModal.isOpen}
         onClose={() => setAnnouncementModal({ isOpen: false, announcement: null })}
         onSave={announcementModal.announcement ? 
-          (data) => handleAction(() => updateAnnouncement(announcementModal.announcement.id, data)) :
-          (data) => handleAction(() => createAnnouncement(data))
+          (data) => handleAction(
+            () => updateAnnouncement(announcementModal.announcement.id, data),
+            'Announcement updated successfully'
+          ) :
+          (data) => handleAction(
+            () => createAnnouncement(data),
+            'Announcement created successfully'
+          )
         }
         announcement={announcementModal.announcement}
         loading={actionLoading}
@@ -751,8 +798,14 @@ const AdminDashboard: React.FC = () => {
         isOpen={couponModal.isOpen}
         onClose={() => setCouponModal({ isOpen: false, coupon: null })}
         onSave={couponModal.coupon ? 
-          (data) => handleAction(() => updateCoupon(couponModal.coupon.id, data)) :
-          (data) => handleAction(() => createCoupon(data))
+          (data) => handleAction(
+            () => updateCoupon(couponModal.coupon.id, data),
+            'Coupon updated successfully'
+          ) :
+          (data) => handleAction(
+            () => createCoupon(data),
+            'Coupon created successfully'
+          )
         }
         coupon={couponModal.coupon}
         loading={actionLoading}
@@ -762,8 +815,14 @@ const AdminDashboard: React.FC = () => {
         isOpen={categoryModal.isOpen}
         onClose={() => setCategoryModal({ isOpen: false, category: null })}
         onSave={categoryModal.category ? 
-          (data) => handleAction(() => updateCategory(categoryModal.category.id, data)) :
-          (data) => handleAction(() => createCategory(data))
+          (data) => handleAction(
+            () => updateCategory(categoryModal.category.id, data),
+            'Category updated successfully'
+          ) :
+          (data) => handleAction(
+            () => createCategory(data),
+            'Category created successfully'
+          )
         }
         category={categoryModal.category}
         loading={actionLoading}
