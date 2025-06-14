@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Package, Clock, CheckCircle, Truck, MapPin, CreditCard, Loader2, AlertCircle } from 'lucide-react';
+import { Package, Clock, CheckCircle, Truck, MapPin, CreditCard, Loader2, AlertCircle, X } from 'lucide-react';
 import { useOrders } from '../hooks/useOrders';
 import { Order } from '../types';
+import OrderCancellation from '../components/order/OrderCancellation';
 
 const OrderPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { getOrder, loading } = useOrders();
+  const { getOrder, updateOrderStatus, loading } = useOrders();
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showCancellation, setShowCancellation] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -25,6 +28,26 @@ const OrderPage: React.FC = () => {
     fetchOrder();
   }, [id, getOrder]);
 
+  const handleCancelOrder = async (orderId: string, reason: string) => {
+    try {
+      setCancelling(true);
+      
+      // Update order status to cancelled
+      await updateOrderStatus(orderId, 'cancelled');
+      
+      // Refresh order data
+      const updatedOrder = await getOrder(orderId);
+      setOrder(updatedOrder);
+      
+      setShowCancellation(false);
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      setError('Failed to cancel order. Please try again.');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
@@ -37,6 +60,8 @@ const OrderPage: React.FC = () => {
         return <Truck className="w-5 h-5 text-purple-500" />;
       case 'delivered':
         return <CheckCircle className="w-5 h-5 text-green-600" />;
+      case 'cancelled':
+        return <X className="w-5 h-5 text-red-500" />;
       default:
         return <Package className="w-5 h-5 text-gray-500" />;
     }
@@ -54,6 +79,8 @@ const OrderPage: React.FC = () => {
         return 'Dispatched via Porter';
       case 'delivered':
         return 'Delivered';
+      case 'cancelled':
+        return 'Cancelled';
       default:
         return status;
     }
@@ -64,16 +91,21 @@ const OrderPage: React.FC = () => {
       case 'pending':
         return 'text-yellow-600 bg-yellow-50 border-yellow-200';
       case 'prepaid':
-        return 'text-blue-600 bg-blue-50 border-blue-200';
       case 'fully_paid':
-        return 'text-green-600 bg-green-50 border-green-200';
+        return 'text-blue-600 bg-blue-50 border-blue-200';
       case 'dispatched':
         return 'text-purple-600 bg-purple-50 border-purple-200';
       case 'delivered':
         return 'text-green-700 bg-green-100 border-green-300';
+      case 'cancelled':
+        return 'text-red-600 bg-red-50 border-red-200';
       default:
         return 'text-gray-600 bg-gray-50 border-gray-200';
     }
+  };
+
+  const canCancelOrder = (order: Order) => {
+    return ['pending', 'prepaid', 'fully_paid'].includes(order.order_status);
   };
 
   if (loading) {
@@ -116,7 +148,18 @@ const OrderPage: React.FC = () => {
         <div className="lg:col-span-2 space-y-6">
           {/* Order Status */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Order Status</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-800">Order Status</h2>
+              {canCancelOrder(order) && (
+                <button
+                  onClick={() => setShowCancellation(true)}
+                  className="text-red-500 hover:text-red-600 font-medium text-sm transition-colors"
+                >
+                  Cancel Order
+                </button>
+              )}
+            </div>
+            
             <div className={`flex items-center space-x-3 p-4 rounded-lg border ${getStatusColor(order.order_status)}`}>
               {getStatusIcon(order.order_status)}
               <div>
@@ -141,6 +184,16 @@ const OrderPage: React.FC = () => {
                 >
                   Pay Now via UPI
                 </a>
+              </div>
+            )}
+
+            {/* Cancellation Notice */}
+            {order.order_status === 'cancelled' && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <h3 className="font-semibold text-red-800 mb-2">Order Cancelled</h3>
+                <p className="text-sm text-red-700">
+                  This order has been cancelled. If payment was made, refund will be processed within 3-5 business days.
+                </p>
               </div>
             )}
           </div>
@@ -263,6 +316,16 @@ const OrderPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Order Cancellation Modal */}
+      {showCancellation && (
+        <OrderCancellation
+          order={order}
+          onCancel={handleCancelOrder}
+          onClose={() => setShowCancellation(false)}
+          loading={cancelling}
+        />
+      )}
     </div>
   );
 };

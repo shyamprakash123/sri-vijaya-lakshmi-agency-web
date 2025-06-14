@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, CreditCard, Package, Clock, Loader2 } from 'lucide-react';
+import { MapPin, CreditCard, Package, Clock, Loader2, AlertTriangle } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
 import { useOrders } from '../hooks/useOrders';
 import { useCoupons } from '../hooks/useCoupons';
 import { Address } from '../types';
+import LocationPicker from '../components/location/LocationPicker';
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -24,9 +25,27 @@ const CheckoutPage: React.FC = () => {
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [discount, setDiscount] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [stockErrors, setStockErrors] = useState<string[]>([]);
 
   const subtotal = getTotalAmount();
   const finalAmount = subtotal - discount;
+
+  // Check stock availability for all cart items
+  const checkStockAvailability = () => {
+    const errors: string[] = [];
+    
+    cartItems.forEach(item => {
+      if (item.quantity > item.product.available_quantity) {
+        errors.push(`${item.product.name}: Only ${item.product.available_quantity} bags available (you have ${item.quantity} in cart)`);
+      }
+      if (item.product.available_quantity === 0) {
+        errors.push(`${item.product.name}: Out of stock`);
+      }
+    });
+    
+    setStockErrors(errors);
+    return errors.length === 0;
+  };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -72,6 +91,12 @@ const CheckoutPage: React.FC = () => {
   };
 
   const handlePlaceOrder = async () => {
+    // Check stock availability first
+    if (!checkStockAvailability()) {
+      setErrors(prev => ({ ...prev, stock: 'Please resolve stock issues before proceeding' }));
+      return;
+    }
+
     if (!validateForm()) return;
 
     try {
@@ -119,6 +144,24 @@ const CheckoutPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Checkout Form */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Stock Availability Warnings */}
+          {stockErrors.length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <AlertTriangle size={20} className="text-red-500" />
+                <h3 className="font-semibold text-red-800">Stock Issues</h3>
+              </div>
+              <ul className="text-red-700 text-sm space-y-1">
+                {stockErrors.map((error, index) => (
+                  <li key={index}>• {error}</li>
+                ))}
+              </ul>
+              <p className="text-red-600 text-sm mt-2">
+                Please update your cart quantities or remove out-of-stock items.
+              </p>
+            </div>
+          )}
+
           {/* Cart Review */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Order Summary</h2>
@@ -134,10 +177,18 @@ const CheckoutPage: React.FC = () => {
                     <h3 className="font-semibold text-gray-800">{item.product.name}</h3>
                     <p className="text-sm text-gray-600">{item.product.weight} • {item.selectedSlab.label}</p>
                     <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                    {item.quantity > item.product.available_quantity && (
+                      <p className="text-xs text-red-500">
+                        ⚠️ Only {item.product.available_quantity} available
+                      </p>
+                    )}
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-gray-800">
                       ₹{item.selectedSlab.price_per_bag * item.quantity}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      ₹{item.selectedSlab.price_per_bag}/bag
                     </p>
                   </div>
                 </div>
@@ -163,50 +214,12 @@ const CheckoutPage: React.FC = () => {
               <MapPin size={20} className="mr-2" />
               Delivery Address
             </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Address *
-                </label>
-                <textarea
-                  value={deliveryAddress.fullAddress}
-                  onChange={(e) => setDeliveryAddress(prev => ({ ...prev, fullAddress: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  rows={3}
-                  placeholder="Enter complete delivery address"
-                />
-                {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Pincode *
-                  </label>
-                  <input
-                    type="text"
-                    value={deliveryAddress.pincode}
-                    onChange={(e) => setDeliveryAddress(prev => ({ ...prev, pincode: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Enter pincode"
-                  />
-                  {errors.pincode && <p className="text-red-500 text-sm mt-1">{errors.pincode}</p>}
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Landmark (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={deliveryAddress.landmark}
-                    onChange={(e) => setDeliveryAddress(prev => ({ ...prev, landmark: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Enter landmark"
-                  />
-                </div>
-              </div>
-            </div>
+            <LocationPicker
+              onLocationSelect={(address) => setDeliveryAddress(address)}
+              initialAddress={deliveryAddress}
+            />
+            {errors.address && <p className="text-red-500 text-sm mt-2">{errors.address}</p>}
+            {errors.pincode && <p className="text-red-500 text-sm mt-2">{errors.pincode}</p>}
           </div>
 
           {/* Order Type */}
@@ -340,9 +353,15 @@ const CheckoutPage: React.FC = () => {
               </div>
             )}
 
+            {errors.stock && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-600 text-sm">{errors.stock}</p>
+              </div>
+            )}
+
             <button
               onClick={handlePlaceOrder}
-              disabled={orderLoading}
+              disabled={orderLoading || stockErrors.length > 0}
               className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2"
             >
               {orderLoading ? (
