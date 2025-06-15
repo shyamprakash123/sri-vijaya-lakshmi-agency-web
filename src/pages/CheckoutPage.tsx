@@ -32,7 +32,8 @@ const CheckoutPage: React.FC = () => {
   const [suggestedVehicle, setSuggestedVehicle] = useState(null);
 
   const subtotal = getTotalAmount();
-  const finalAmount = subtotal + discount;
+  const transportationAmount = 0; // Will be paid to Porter directly
+  const finalAmount = subtotal - discount + transportationAmount;
 
   // Check stock availability for all cart items
   const checkStockAvailability = () => {
@@ -91,11 +92,10 @@ const CheckoutPage: React.FC = () => {
         setSuggestedVehicle(null);
         setFetchVehicleLoading(false);
       }
-    }, 5000); // Delay: 2 seconds
+    }, 5000); // Delay: 5 seconds
 
     return () => clearTimeout(timeout); // Cancel timeout on address change
   }, [deliveryAddress, getTotalWeight()]);
-
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -157,7 +157,9 @@ const CheckoutPage: React.FC = () => {
         gstNumber || undefined,
         scheduledDelivery || undefined,
         transportationRequired,
-        transportationAmount
+        transportationAmount,
+        appliedCoupon?.code,
+        discount
       );
 
       // Clear cart and redirect to order confirmation
@@ -313,8 +315,7 @@ const CheckoutPage: React.FC = () => {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-2">
                   <Store size={16} className="text-blue-500" />
-                  <h4 className="font-semibold text-blue-800">Store Pickup Available
-                  </h4>
+                  <h4 className="font-semibold text-blue-800">Store Pickup Available</h4>
                   <a
                       href={`https://www.google.com/maps/dir/?api=1&destination=${import.meta.env.VITE_STORE_LAT},${import.meta.env.VITE_STORE_LNG}`}
                       target="_blank"
@@ -354,41 +355,8 @@ const CheckoutPage: React.FC = () => {
                   <div className="text-sm text-gray-600">
                     Dispatches within 1 hour if transportation service is opted.
                   </div>
-
                 </label>
               </div>
-
-              {/* <div className="flex items-center space-x-3">
-                <input
-                  type="radio"
-                  id="preorder"
-                  name="orderType"
-                  value="preorder"
-                  checked={orderType === 'preorder'}
-                  onChange={(e) => setOrderType(e.target.value as 'preorder')}
-                  className="w-4 h-4 text-orange-500"
-                />
-                <label htmlFor="preorder" className="flex-1">
-                  <div className="font-medium">Pre-order (50% Now, 50% Before Dispatch)</div>
-                  <div className="text-sm text-gray-600">Schedule delivery for later with discount</div>
-                </label>
-              </div>
-
-              {orderType === 'preorder' && (
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Scheduled Delivery *
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={scheduledDelivery}
-                    onChange={(e) => setScheduledDelivery(e.target.value)}
-                    min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  />
-                  {errors.scheduledDelivery && <p className="text-red-500 text-sm mt-1">{errors.scheduledDelivery}</p>}
-                </div>
-              )} */}
             </div>
           </div>
         </div>
@@ -442,7 +410,7 @@ const CheckoutPage: React.FC = () => {
 
               {discount > 0 && (
                 <div className="flex justify-between text-green-600">
-                  <span>Discount</span>
+                  <span>Coupon Discount</span>
                   <span>-₹{discount}</span>
                 </div>
               )}
@@ -452,11 +420,6 @@ const CheckoutPage: React.FC = () => {
                   <span className="text-lg font-semibold text-gray-800">Total</span>
                   <span className="text-2xl font-bold text-orange-500">₹{finalAmount}</span>
                 </div>
-                {/* {orderType === 'preorder' && (
-                  <p className="text-sm text-gray-600 mt-1">
-                    Pay now: ₹{Math.ceil(finalAmount / 2)} | Pay later: ₹{Math.floor(finalAmount / 2)}
-                  </p>
-                )} */}
               </div>
             </div>
 

@@ -18,7 +18,8 @@ import {
   Megaphone,
   Image as ImageIcon,
   Tag,
-  Percent
+  Percent,
+  Hash
 } from 'lucide-react';
 import { useAdmin } from '../../hooks/useAdmin';
 import ProductModal from '../../components/admin/ProductModal';
@@ -237,6 +238,9 @@ const AdminDashboard: React.FC = () => {
                   Amount
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Coupon
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -265,7 +269,25 @@ const AdminDashboard: React.FC = () => {
                     {order.user_id ? 'Registered User' : 'Guest'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ₹{order.total_amount.toLocaleString()}
+                    <div>
+                      <div className="font-semibold">₹{order.total_amount.toLocaleString()}</div>
+                      {order.subtotal_amount && order.subtotal_amount !== order.total_amount && (
+                        <div className="text-xs text-gray-500">
+                          Subtotal: ₹{order.subtotal_amount.toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {order.coupon_code ? (
+                      <div className="flex items-center space-x-1">
+                        <Tag size={12} className="text-green-500" />
+                        <span className="text-green-600 font-medium">{order.coupon_code}</span>
+                        <span className="text-green-600">(-₹{order.coupon_discount})</span>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">No coupon</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -278,6 +300,7 @@ const AdminDashboard: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                
                       order.order_type === 'preorder' ? 'bg-purple-100 text-purple-800' : 'bg-orange-100 text-orange-800'
                     }`}>
                       {order.order_type}
@@ -645,6 +668,12 @@ const AdminDashboard: React.FC = () => {
               <p><strong>Min Order:</strong> ₹{coupon.min_order_amount}</p>
               {coupon.max_discount && (
                 <p><strong>Max Discount:</strong> ₹{coupon.max_discount}</p>
+              )}
+              {coupon.max_uses && (
+                <p><strong>Max Uses:</strong> {coupon.current_uses || 0}/{coupon.max_uses}</p>
+              )}
+              {coupon.max_uses_per_user && (
+                <p><strong>Per User:</strong> {coupon.max_uses_per_user}</p>
               )}
               <p><strong>Valid Until:</strong> {new Date(coupon.valid_until).toLocaleDateString()}</p>
             </div>

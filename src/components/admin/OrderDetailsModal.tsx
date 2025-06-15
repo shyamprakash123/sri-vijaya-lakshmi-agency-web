@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { X, Printer, MapPin, Package, CreditCard, Clock, User, Phone, Mail, FileText, Truck } from 'lucide-react';
+import { X, Printer, MapPin, Package, CreditCard, Clock, User, Phone, Mail, FileText, Truck, Tag } from 'lucide-react';
 import { Order } from '../../types';
 
 interface OrderDetailsModalProps {
@@ -314,7 +314,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onClose, 
   };
 
   const calculateSubtotal = () => {
-    return order.order_items?.reduce((sum, item) => sum + (item.price_per_bag * item.quantity), 0) || 0;
+    return order.subtotal_amount || order.order_items?.reduce((sum, item) => sum + (item.price_per_bag * item.quantity), 0) || 0;
   };
 
   return (
@@ -433,6 +433,22 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onClose, 
                 )}
               </div>
 
+              {/* Coupon Information */}
+              {order.coupon_code && (
+                <div className="section">
+                  <h4 className="section-title">Coupon Applied</h4>
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Tag size={16} className="text-green-600" />
+                        <span className="font-semibold text-green-800">Coupon Code: {order.coupon_code}</span>
+                      </div>
+                      <span className="font-bold text-green-800">-₹{order.coupon_discount}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Transportation Information */}
               {order.transportation_required && (
                 <div className="section">
@@ -441,7 +457,9 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onClose, 
                     <div className="flex items-center">
                       <Truck size={16} className="mr-2 text-yellow-600" />
                       <span className="font-semibold text-yellow-800">Transportation Required</span>
-                      <span className="ml-auto font-bold text-yellow-800">₹{order.transportation_amount}</span>
+                      {order.transportation_amount && (
+                        <span className="ml-auto font-bold text-yellow-800">₹{order.transportation_amount}</span>
+                      )}
                     </div>
                     <p className="text-yellow-700 text-sm mt-1">Additional transportation assistance requested</p>
                   </div>
@@ -506,7 +524,14 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onClose, 
                       <span className="font-semibold">₹{calculateSubtotal().toLocaleString()}</span>
                     </div>
                     
-                    {order.transportation_required && (
+                    {order.coupon_code && order.coupon_discount && order.coupon_discount > 0 && (
+                      <div className="total-row flex justify-between text-green-600">
+                        <span>Coupon Discount ({order.coupon_code}):</span>
+                        <span className="font-semibold">-₹{order.coupon_discount.toLocaleString()}</span>
+                      </div>
+                    )}
+                    
+                    {order.transportation_required && order.transportation_amount && (
                       <div className="total-row flex justify-between">
                         <span className="text-gray-600">Transportation:</span>
                         <span className="font-semibold">₹{order.transportation_amount?.toLocaleString()}</span>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, Percent, DollarSign } from 'lucide-react';
+import { X, Loader2, Percent, DollarSign, Users, Hash } from 'lucide-react';
 
 interface CouponModalProps {
   isOpen: boolean;
@@ -22,6 +22,8 @@ const CouponModal: React.FC<CouponModalProps> = ({
     discount_value: '',
     min_order_amount: '',
     max_discount: '',
+    max_uses: '',
+    max_uses_per_user: '',
     is_active: true,
     valid_until: ''
   });
@@ -35,6 +37,8 @@ const CouponModal: React.FC<CouponModalProps> = ({
         discount_value: coupon.discount_value.toString(),
         min_order_amount: coupon.min_order_amount.toString(),
         max_discount: coupon.max_discount?.toString() || '',
+        max_uses: coupon.max_uses?.toString() || '',
+        max_uses_per_user: coupon.max_uses_per_user?.toString() || '',
         is_active: coupon.is_active,
         valid_until: coupon.valid_until.split('T')[0] // Format for date input
       });
@@ -45,6 +49,8 @@ const CouponModal: React.FC<CouponModalProps> = ({
         discount_value: '',
         min_order_amount: '',
         max_discount: '',
+        max_uses: '',
+        max_uses_per_user: '',
         is_active: true,
         valid_until: ''
       });
@@ -91,6 +97,12 @@ const CouponModal: React.FC<CouponModalProps> = ({
     if (formData.max_discount && parseFloat(formData.max_discount) <= 0) {
       newErrors.max_discount = 'Maximum discount must be greater than 0';
     }
+    if (formData.max_uses && parseInt(formData.max_uses) <= 0) {
+      newErrors.max_uses = 'Maximum uses must be greater than 0';
+    }
+    if (formData.max_uses_per_user && parseInt(formData.max_uses_per_user) <= 0) {
+      newErrors.max_uses_per_user = 'Maximum uses per user must be greater than 0';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -107,6 +119,8 @@ const CouponModal: React.FC<CouponModalProps> = ({
         discount_value: parseFloat(formData.discount_value),
         min_order_amount: parseFloat(formData.min_order_amount),
         max_discount: formData.max_discount ? parseFloat(formData.max_discount) : null,
+        max_uses: formData.max_uses ? parseInt(formData.max_uses) : null,
+        max_uses_per_user: formData.max_uses_per_user ? parseInt(formData.max_uses_per_user) : null,
         valid_until: new Date(formData.valid_until).toISOString()
       };
 
@@ -127,7 +141,7 @@ const CouponModal: React.FC<CouponModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-800">
             {coupon ? 'Edit Coupon' : 'Create Coupon'}
@@ -265,6 +279,60 @@ const CouponModal: React.FC<CouponModalProps> = ({
             </div>
           </div>
 
+          {/* Usage Limits Section */}
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <Hash size={20} className="mr-2 text-orange-500" />
+              Usage Limits
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Maximum Total Uses (Optional)
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Hash size={16} className="text-gray-400" />
+                  </div>
+                  <input
+                    type="number"
+                    name="max_uses"
+                    value={formData.max_uses}
+                    onChange={handleInputChange}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="100"
+                    min="1"
+                  />
+                </div>
+                {errors.max_uses && <p className="text-red-500 text-sm mt-1">{errors.max_uses}</p>}
+                <p className="text-gray-500 text-xs mt-1">Total number of times this coupon can be used</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Maximum Uses Per User (Optional)
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Users size={16} className="text-gray-400" />
+                  </div>
+                  <input
+                    type="number"
+                    name="max_uses_per_user"
+                    value={formData.max_uses_per_user}
+                    onChange={handleInputChange}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="1"
+                    min="1"
+                  />
+                </div>
+                {errors.max_uses_per_user && <p className="text-red-500 text-sm mt-1">{errors.max_uses_per_user}</p>}
+                <p className="text-gray-500 text-xs mt-1">How many times each user can use this coupon</p>
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -282,7 +350,7 @@ const CouponModal: React.FC<CouponModalProps> = ({
           {formData.code && formData.discount_value && (
             <div className="bg-gray-50 rounded-lg p-4">
               <h3 className="text-sm font-medium text-gray-700 mb-2">Preview</h3>
-              <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-3 rounded-lg">
+              <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-4 rounded-lg">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-bold text-lg">{formData.code}</p>
@@ -292,10 +360,16 @@ const CouponModal: React.FC<CouponModalProps> = ({
                         : `₹${formData.discount_value} OFF`}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs opacity-75">Min. order ₹{formData.min_order_amount}</p>
+                  <div className="text-right text-xs opacity-75">
+                    <p>Min. order ₹{formData.min_order_amount}</p>
                     {formData.max_discount && formData.discount_type === 'percentage' && (
-                      <p className="text-xs opacity-75">Max. ₹{formData.max_discount}</p>
+                      <p>Max. ₹{formData.max_discount}</p>
+                    )}
+                    {formData.max_uses && (
+                      <p>Max uses: {formData.max_uses}</p>
+                    )}
+                    {formData.max_uses_per_user && (
+                      <p>Per user: {formData.max_uses_per_user}</p>
                     )}
                   </div>
                 </div>

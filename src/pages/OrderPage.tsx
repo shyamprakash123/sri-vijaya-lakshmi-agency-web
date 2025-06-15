@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Package, Clock, CheckCircle, Truck, MapPin, CreditCard, Loader2, AlertCircle, X } from 'lucide-react';
+import { Package, Clock, CheckCircle, Truck, MapPin, CreditCard, Loader2, AlertCircle, X, Tag, Percent } from 'lucide-react';
 import { useOrders } from '../hooks/useOrders';
 import { Order } from '../types';
 import OrderCancellation from '../components/order/OrderCancellation';
@@ -276,7 +276,34 @@ const OrderPage: React.FC = () => {
                   </span>
                 </div>
               )}
-              
+            </div>
+
+            {/* Pricing Breakdown */}
+            <div className="border-t border-gray-200 pt-4 space-y-3">
+              {order.subtotal_amount && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="font-medium">₹{order.subtotal_amount}</span>
+                </div>
+              )}
+
+              {order.coupon_code && order.coupon_discount && order.coupon_discount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <div className="flex items-center space-x-1">
+                    <Tag size={14} />
+                    <span>Coupon ({order.coupon_code})</span>
+                  </div>
+                  <span>-₹{order.coupon_discount}</span>
+                </div>
+              )}
+
+              {order.transportation_required && order.transportation_amount && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Transportation</span>
+                  <span className="font-medium">₹{order.transportation_amount}</span>
+                </div>
+              )}
+
               <div className="border-t border-gray-200 pt-3">
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-semibold text-gray-800">Total Amount</span>
@@ -292,7 +319,7 @@ const OrderPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 mt-6">
               <Link
                 to="/products"
                 className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-lg font-semibold transition-colors text-center block"

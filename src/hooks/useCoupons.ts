@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Coupon } from '../types';
 import { couponService } from '../lib/supabase';
+import { useAuth } from './useAuth';
 
 export const useCoupons = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const validateCoupon = async (code: string, orderAmount: number): Promise<{
     isValid: boolean;
@@ -17,6 +19,16 @@ export const useCoupons = () => {
       setError(null);
 
       const coupon = await couponService.getByCode(code);
+      
+      // Check usage limits
+      const usageCheck = await couponService.checkUsageLimits(coupon.id, user?.id);
+      
+      if (!usageCheck.valid) {
+        return {
+          isValid: false,
+          message: usageCheck.message
+        };
+      }
       
       if (orderAmount < coupon.min_order_amount) {
         return {

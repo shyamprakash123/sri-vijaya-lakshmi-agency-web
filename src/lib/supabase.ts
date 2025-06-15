@@ -207,6 +207,9 @@ export const bannerService = {
 export const orderService = {
   async create(orderData: {
     total_amount: number;
+    subtotal_amount: number;
+    coupon_code?: string;
+    coupon_discount?: number;
     gst_number?: string;
     delivery_address: any;
     order_type: 'instant' | 'preorder';
@@ -248,6 +251,27 @@ export const orderService = {
       .insert(orderItems);
 
     if (itemsError) throw itemsError;
+
+    // Record coupon usage if coupon was used
+    if (orderData.coupon_code && orderData.coupon_discount && orderData.coupon_discount > 0) {
+      // Get coupon ID
+      const { data: coupon } = await supabase
+        .from('coupons')
+        .select('id')
+        .eq('code', orderData.coupon_code)
+        .single();
+
+      if (coupon) {
+        await supabase
+          .from('coupon_usage')
+          .insert({
+            coupon_id: coupon.id,
+            order_id: orderResult.id,
+            user_id: user?.id || null,
+            discount_amount: orderData.coupon_discount
+          });
+      }
+    }
 
     return orderResult;
   },
@@ -324,6 +348,16 @@ export const couponService = {
       .eq('is_active', true)
       .gte('valid_until', new Date().toISOString())
       .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async checkUsageLimits(couponId: string, userId?: string) {
+    const { data, error } = await supabase.rpc('check_coupon_usage_limits', {
+      p_coupon_id: couponId,
+      p_user_id: userId || null
+    });
 
     if (error) throw error;
     return data;

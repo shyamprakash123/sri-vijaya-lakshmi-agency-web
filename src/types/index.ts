@@ -32,6 +32,9 @@ export interface Order {
   id: string;
   user_id: string | null;
   total_amount: number;
+  subtotal_amount?: number;
+  coupon_code?: string;
+  coupon_discount?: number;
   gst_number?: string;
   delivery_address: Address;
   order_type: 'instant' | 'preorder';
@@ -85,6 +88,9 @@ export interface Coupon {
   discount_value: number;
   min_order_amount: number;
   max_discount?: number;
+  max_uses?: number;
+  max_uses_per_user?: number;
+  current_uses?: number;
   is_active: boolean;
   valid_until: string;
   created_at: string;
