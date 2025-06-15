@@ -115,8 +115,6 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
     const popup = olaMaps.addPopup({ offset: 25 }).setHTML(`
       <div class="text-sm">
         <strong>Sri Vijaya Lakshmi Agency</strong><br />
-        New Hafeezpet, Marthanda Nagar, Hyderabad, Telangana - 500049<br />
-        Tamil Nadu 600001
       </div>
     `);
 
@@ -128,7 +126,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
 
     const geolocate = olaMaps.addGeolocateControls({
       positionOptions: { enableHighAccuracy: true },
-      trackUserLocation: true,
+      trackUserLocation: false,
     });
 
     map.addControl(geolocate);
@@ -236,7 +234,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
       </div>
 
       {/* Search Bar */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded shadow-md w-[90%] max-w-md flex items-center p-2 z-20">
+      <div className="absolute top-12 md:top-4 left-1/2 transform -translate-x-1/2 bg-white rounded shadow-md w-[90%] max-w-md flex items-center p-2 z-20">
         <Search className="mr-2 text-gray-500" />
         <input
           className="w-full outline-none"

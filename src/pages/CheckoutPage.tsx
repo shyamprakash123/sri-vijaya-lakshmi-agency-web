@@ -10,6 +10,7 @@ import SuggestedVehicleCard from '../components/SuggestedVehicleCard';
 import { encryptOrderInfo } from '../lib/EncryptToken';
 import { useAuth } from '../hooks/useAuth';
 import { generateUpiLink } from '../lib/UPILinkGenerator';
+import PayNowSectionCheckout from '../components/ui/PayNowSectionCheckout';
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ const CheckoutPage: React.FC = () => {
   const [gstNumber, setGstNumber] = useState('');
   const [orderType, setOrderType] = useState<'instant' | 'preorder'>('instant');
   const [scheduledDelivery, setScheduledDelivery] = useState('');
+  const [isValidGst, setIsValidGst] = useState(true);
   const [transportationRequired, setTransportationRequired] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
@@ -34,6 +36,8 @@ const CheckoutPage: React.FC = () => {
   const [stockErrors, setStockErrors] = useState<string[]>([]);
   const [fetchVehicleLoading, setFetchVehicleLoading] = useState<boolean>(false);
   const [suggestedVehicle, setSuggestedVehicle] = useState(null);
+  const [paymentUrl, setPaymentUrl] = useState(null);
+  const [orderData, setOrderData] = useState(null);
 
   const subtotal = getTotalAmount();
   const finalAmount = subtotal - discount;
@@ -100,6 +104,17 @@ const CheckoutPage: React.FC = () => {
     return () => clearTimeout(timeout); // Cancel timeout on address change
   }, [deliveryAddress, getTotalWeight()]);
 
+  const validateGst = (value: string) => {
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    return gstRegex.test(value.toUpperCase());
+  };
+
+  const handleGstChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase();
+    setGstNumber(value);
+    setIsValidGst(validateGst(value));
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -145,6 +160,9 @@ const CheckoutPage: React.FC = () => {
 
   const handlePlaceOrder = async () => {
     // Check stock availability first
+    if (gstNumber !== "" && !validateGst(gstNumber)) {
+      return;
+    }
     if (!checkStockAvailability()) {
       setErrors(prev => ({ ...prev, stock: 'Please resolve stock issues before proceeding' }));
       return;
@@ -180,13 +198,12 @@ const CheckoutPage: React.FC = () => {
         amount: order.total_amount,
         transactionNote: encryptedInfo
       });
-      
-      // Use in anchor tag or open directly
-      window.open(upiUrl, '_blank');
+
+      setPaymentUrl(upiUrl);
+      setOrderData(order);
 
       // Clear cart and redirect to order confirmation
       clearCart();
-      navigate(`/orders`);
     } catch (error) {
       setErrors(prev => ({
         ...prev,
@@ -194,6 +211,25 @@ const CheckoutPage: React.FC = () => {
       }));
     }
   };
+
+  if (orderData !== null) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <PayNowSectionCheckout
+          upiUrl={generateUpiLink({
+            payeeVPA: import.meta.env.VITE_UPI_ID,
+            payeeName: 'Sri Vijaya Lakshmi',
+            amount: orderData.total_amount,
+            transactionNote: encryptOrderInfo({
+              order_id: orderData.id,
+              user_id: user?.id,
+              amount: orderData.total_amount,
+            })
+          })}
+        />
+      </div>
+    );
+  }
 
   if (cartItems.length === 0) {
     return (
@@ -286,13 +322,21 @@ const CheckoutPage: React.FC = () => {
           {/* GST Number */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">GST Information - For Bill of Supply (Optional)</h2>
-            <input
-              type="text"
-              placeholder="Enter GST Number"
-              value={gstNumber}
-              onChange={(e) => setGstNumber(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
+            <div>
+              <input
+                type="text"
+                placeholder="Enter GST Number"
+                value={gstNumber}
+                onChange={handleGstChange}
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${isValidGst
+                  ? 'border-gray-300 focus:ring-purple-500'
+                  : 'border-red-500 focus:ring-red-400'
+                  }`}
+              />
+              {!isValidGst && gstNumber.length > 0 && (
+                <p className="text-sm text-red-500 mt-1">Invalid GST number format</p>
+              )}
+            </div>
           </div>
 
           {/* Delivery Address */}
@@ -385,24 +429,28 @@ const CheckoutPage: React.FC = () => {
 
         {/* Order Summary Sidebar */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Payment Summary</h3>
+          <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-4 border border-gray-100">
+            <div className="mb-6">
+              <h3 className="text-xl font-bold text-gray-800">Payment Summary</h3>
+              <p className="text-sm text-gray-500 mt-1">Complete your purchase securely</p>
+            </div>
 
             {/* Coupon Section */}
-            <div className="mb-4">
-              <div className="flex space-x-2 mb-2">
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Have a coupon?</label>
+              <div className="flex flex-col gap-2">
                 <input
                   type="text"
                   placeholder="Enter coupon code"
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all disabled:bg-gray-100"
                   disabled={appliedCoupon}
                 />
                 {appliedCoupon ? (
                   <button
                     onClick={handleRemoveCoupon}
-                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                    className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
                   >
                     Remove
                   </button>
@@ -410,28 +458,29 @@ const CheckoutPage: React.FC = () => {
                   <button
                     onClick={handleApplyCoupon}
                     disabled={couponLoading || !couponCode.trim()}
-                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-300 transition-colors"
+                    className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:bg-gray-300 transition"
                   >
                     {couponLoading ? <Loader2 size={16} className="animate-spin" /> : 'Apply'}
                   </button>
                 )}
               </div>
-              {errors.coupon && <p className="text-red-500 text-sm">{errors.coupon}</p>}
+              {errors.coupon && <p className="text-sm text-red-600 mt-2">{errors.coupon}</p>}
               {appliedCoupon && (
-                <p className="text-green-600 text-sm">
-                  Coupon "{appliedCoupon.code}" applied! You saved ₹{discount}
+                <p className="text-sm text-green-600 mt-2">
+                  🎉 Coupon "<span className="font-semibold">{appliedCoupon.code}</span>" applied! You saved ₹{discount}
                 </p>
               )}
             </div>
 
-            <div className="space-y-3 mb-4">
-              <div className="flex justify-between">
+            {/* Amount Breakdown */}
+            <div className="space-y-3 mb-5">
+              <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Subtotal</span>
                 <span className="font-medium">₹{subtotal}</span>
               </div>
 
               {discount > 0 && (
-                <div className="flex justify-between text-green-600">
+                <div className="flex justify-between text-sm text-green-600">
                   <span>Coupon Discount</span>
                   <span>-₹{discount}</span>
                 </div>
@@ -439,28 +488,30 @@ const CheckoutPage: React.FC = () => {
 
               <div className="border-t border-gray-200 pt-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold text-gray-800">Total</span>
+                  <span className="text-base font-semibold text-gray-800">Total</span>
                   <span className="text-2xl font-bold text-orange-500">₹{finalAmount}</span>
                 </div>
               </div>
             </div>
 
+            {/* Error Handling */}
             {errors.submit && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{errors.submit}</p>
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-600">{errors.submit}</p>
               </div>
             )}
 
             {errors.stock && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{errors.stock}</p>
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-600">{errors.stock}</p>
               </div>
             )}
 
+            {/* Place Order Button */}
             <button
               onClick={handlePlaceOrder}
               disabled={orderLoading || stockErrors.length > 0}
-              className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2"
+              className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white py-3 px-6 rounded-lg font-semibold transition flex items-center justify-center space-x-2"
             >
               {orderLoading ? (
                 <Loader2 size={20} className="animate-spin" />
@@ -472,13 +523,15 @@ const CheckoutPage: React.FC = () => {
               )}
             </button>
 
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-700 text-center">
-                🔐 Secure UPI payment. Order confirmed upon payment detection.
+            {/* Secure Payment Info */}
+            <div className="mt-5 p-3 bg-blue-50 border border-blue-100 rounded-md text-center">
+              <p className="text-sm text-blue-700">
+                🔐 Secure UPI payment. Your order will be confirmed once payment is detected.
               </p>
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );

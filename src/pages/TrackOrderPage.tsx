@@ -118,30 +118,32 @@ const TrackOrderPage: React.FC = () => {
         {/* Search Section */}
         <div className="max-w-md mx-auto mb-8">
           <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex space-x-3">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  placeholder="Enter Order ID"
-                  value={orderId}
-                  onChange={(e) => setOrderId(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                />
+            <section id='orderHeader'>
+              <div className="flex space-x-3">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    placeholder="Enter Order ID"
+                    value={orderId}
+                    onChange={(e) => setOrderId(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  />
+                </div>
+                <button
+                  onClick={handleSearch}
+                  disabled={loading}
+                  className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
+                >
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Search size={20} />
+                  )}
+                  <span className="hidden sm:inline">{loading ? 'Searching...' : 'Track'}</span>
+                </button>
               </div>
-              <button
-                onClick={handleSearch}
-                disabled={loading}
-                className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
-              >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Search size={20} />
-                )}
-                <span className="hidden sm:inline">{loading ? 'Searching...' : 'Track'}</span>
-              </button>
-            </div>
+            </section>
 
             {error && (
               <p className="text-red-500 text-sm mt-3">{error}</p>
@@ -232,23 +234,21 @@ const TrackOrderPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-
-               
               </div>
               {orderData.order_status === "pending" &&
-                  <PayNowSection
-                    upiUrl={generateUpiLink({
-                      payeeVPA: import.meta.env.VITE_UPI_ID,
-                      payeeName: 'Sri Vijaya Lakshmi',
+                <PayNowSection
+                  upiUrl={generateUpiLink({
+                    payeeVPA: import.meta.env.VITE_UPI_ID,
+                    payeeName: 'Sri Vijaya Lakshmi',
+                    amount: orderData.total_amount,
+                    transactionNote: encryptOrderInfo({
+                      order_id: orderData.id,
+                      user_id: user?.id,
                       amount: orderData.total_amount,
-                      transactionNote: encryptOrderInfo({
-                        order_id: orderData.id,
-                        user_id: user?.id,
-                        amount: orderData.total_amount,
-                      })
-                    })}
-                  />
-                }
+                    })
+                  })}
+                />
+              }
             </div>
           </div>
         )}
@@ -281,6 +281,8 @@ const TrackOrderPage: React.FC = () => {
                       onClick={() => {
                         setOrderId(order.id);
                         setOrderData(order);
+                        const section = document.getElementById('orderHeader');
+                        section?.scrollIntoView({ behavior: 'smooth' });
                       }}
                     >
                       <div className="flex items-center justify-between">

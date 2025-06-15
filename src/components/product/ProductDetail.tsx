@@ -147,9 +147,8 @@ const ProductDetail: React.FC = () => {
                     key={index}
                     className={`p-3 rounded-lg border-2 cursor-pointer transition-colors ${selectedSlab?.id === slab.id
                       ? 'border-orange-500 bg-orange-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      : 'border-gray-200'
                       }`}
-                    onClick={() => setSelectedSlab(slab)}
                   >
                     <div className="flex justify-between items-center">
                       <span className="font-medium">{slab.label}</span>
@@ -258,6 +257,14 @@ const ProductDetail: React.FC = () => {
             <MapPin size={24} className="mr-2 text-orange-500" />
             Store Location
           </h3>
+
+          <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${import.meta.env.VITE_STORE_LAT},${import.meta.env.VITE_STORE_LNG}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-primary-500 rounded-lg flex items-center text-white px-3 py-2 justify-center overflow-hidden hover:bg-primary-600 ">
+                Get Directions
+              </a>
 
           {/* Map Placeholder - Replace with actual map integration */}
           <a

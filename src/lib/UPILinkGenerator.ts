@@ -18,6 +18,9 @@ interface UpiLinkOptions {
       pn: payeeName,
       am: amount.toString(),
       cu: currency,
+      mc: "0000",
+      mode: "02",
+      purpose: "00"
     });
   
     if (transactionNote) params.append('tn', transactionNote);

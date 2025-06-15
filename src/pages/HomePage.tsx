@@ -66,7 +66,7 @@ const HomePage: React.FC = () => {
       <section className="py-12 bg-gradient-to-r from-orange-500 to-amber-500">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
-            Looking to Buy Rice for Your Business?
+            Looking to Buy Rice at Bulks for Your Business?
           </h2>
           <p className="text-white text-lg mb-8 opacity-90">
             Get expert assistance in choosing the right rice variety and pricing for your wholesale or retail needs.
