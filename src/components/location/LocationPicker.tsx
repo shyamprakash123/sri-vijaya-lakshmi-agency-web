@@ -259,7 +259,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
 
       {/* Suggestions Dropdown */}
       {suggestions.length > 0 && (
-        <div className="absolute top-16 left-1/2 transform -translate-x-1/2 bg-white shadow-lg rounded w-[90%] max-w-md z-30">
+        <div className="absolute top-24 md:top-16 left-1/2 transform -translate-x-1/2 bg-white shadow-lg rounded w-[90%] max-w-md z-30">
           {suggestions.map((sugg, idx) => (
             <div
               key={idx}
