@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Package, Clock, CheckCircle, Truck, MapPin, Phone, Mail, Loader2, AlertCircle } from 'lucide-react';
+import { Search, Package, Clock, CheckCircle, Truck, MapPin, Phone, Mail, Loader2, AlertCircle, X } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { orderService } from '../lib/supabase';
+import { orderService, supabase } from '../lib/supabase';
 import { Order } from '../types';
 import PayNowSection from '../components/ui/PayNowSection';
 import { generateUpiLink } from '../lib/UPILinkGenerator';
 import { encryptOrderInfo } from '../lib/EncryptToken';
+import { useOrders } from '../hooks/useOrders';
+import CancelOrderButton from '../components/ui/CancelOrderButton';
+import { LoaderIcon } from 'react-hot-toast';
 
 const TrackOrderPage: React.FC = () => {
+  const { updateOrderStatus } = useOrders;
   const [orderId, setOrderId] = useState('');
   const [orderData, setOrderData] = useState<Order | null>(null);
   const [userOrders, setUserOrders] = useState<Order[]>([]);
@@ -66,8 +70,12 @@ const TrackOrderPage: React.FC = () => {
         return <CheckCircle className="w-6 h-6 text-blue-500" />;
       case 'dispatched':
         return <Truck className="w-6 h-6 text-purple-500" />;
+      case 'preparing':
+        return <LoaderIcon className="w-6 h-6 text-purple-500" />;
       case 'delivered':
         return <CheckCircle className="w-6 h-6 text-green-500" />;
+      case 'canceled':
+        return <X className="w-6 h-6 text-red-600" />;
       default:
         return <Package className="w-6 h-6 text-gray-500" />;
     }
@@ -81,10 +89,14 @@ const TrackOrderPage: React.FC = () => {
         return 'Partially Paid (Pre-order)';
       case 'fully_paid':
         return 'Payment Completed';
+      case 'preparing':
+        return 'Preparing For Dispatch';
       case 'dispatched':
         return 'Out for Delivery';
       case 'delivered':
         return 'Delivered';
+      case 'canceled':
+        return 'Canceled';
       default:
         return status;
     }
@@ -97,10 +109,14 @@ const TrackOrderPage: React.FC = () => {
       case 'prepaid':
       case 'fully_paid':
         return 'text-blue-600 bg-blue-50 border-blue-200';
+      case 'preparing':
+        return 'text-purple-600 bg-purple-50 border-purple-200';
       case 'dispatched':
         return 'text-purple-600 bg-purple-50 border-purple-200';
       case 'delivered':
         return 'text-green-600 bg-green-50 border-green-200';
+      case 'canceled':
+        return 'text-red-600 bg-red-50 border-red-200';
       default:
         return 'text-gray-600 bg-gray-50 border-gray-200';
     }
@@ -179,11 +195,19 @@ const TrackOrderPage: React.FC = () => {
 
               {/* Status */}
               <div className="p-6 border-b border-gray-200">
+                {orderData.payment_status !== "pending" &&
+                  <div className={`flex items-center space-x-3 p-4 rounded-lg border mb-2 ${getStatusColor(orderData.payment_status)}`}>
+                    {getStatusIcon(orderData.payment_status)}
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg">{getStatusText(orderData.payment_status)}</h3>
+                    </div>
+                  </div>}
                 <div className={`flex items-center space-x-3 p-4 rounded-lg border ${getStatusColor(orderData.order_status)}`}>
                   {getStatusIcon(orderData.order_status)}
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg">{getStatusText(orderData.order_status)}</h3>
                     {orderData.scheduled_delivery && (
+                      <>
                       <p className="text-sm opacity-75">
                         Scheduled for: {new Date(orderData.scheduled_delivery).toLocaleDateString('en-IN', {
                           month: 'long',
@@ -192,9 +216,38 @@ const TrackOrderPage: React.FC = () => {
                           minute: '2-digit'
                         })}
                       </p>
+                      {orderData.order_type === "preorder" && orderData.payment_status === "pending" &&
+                       <p className="text-sm opacity-75">
+                          Please Pay the Half Amount to confirm the pre-order (Expire After 24 Hrs)
+                      </p>}
+
+                      {orderData.order_type === "preorder" && orderData.payment_status === "partial" &&
+                       <p className="text-sm opacity-75">
+                          Please Pay remaining Half Amount to before scheduled date (Will be dispatched after payment)
+                      </p>}
+                      </>
                     )}
                   </div>
                 </div>
+                {orderData.payment_status === "pending" && orderData.order_status === "pending" &&
+                  <CancelOrderButton
+                    orderId={orderData.id}
+                    onCancel={async (id) => {
+                      const { error } = await supabase
+                        .from('orders')
+                        .update({ order_status: 'canceled' })
+                        .eq('id', id);
+
+                      if (error) throw new Error(error.message);
+
+                      setOrderData((prev) => {
+                        return {
+                          ...prev,
+                          order_status: "canceled"
+                        }
+                      });
+                    }}
+                  />}
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
@@ -235,12 +288,12 @@ const TrackOrderPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              {orderData.order_status === "pending" &&
+              {(orderData.payment_status === "pending" || orderData.payment_status === "partial") &&
                 <PayNowSection
                   upiUrl={generateUpiLink({
                     payeeVPA: import.meta.env.VITE_UPI_ID,
                     payeeName: 'Sri Vijaya Lakshmi',
-                    amount: orderData.total_amount,
+                    amount: orderData.order_type === "instant" ? orderData.total_amount : orderData.total_amount / 2,
                     transactionNote: encryptOrderInfo({
                       order_id: orderData.id,
                       user_id: user?.id,
@@ -277,7 +330,7 @@ const TrackOrderPage: React.FC = () => {
                   {userOrders.map((order) => (
                     <div
                       key={order.id}
-                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                      className={`border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer ${orderData?.id === order.id ? "bg-primary-400" : ""}`}
                       onClick={() => {
                         setOrderId(order.id);
                         setOrderData(order);

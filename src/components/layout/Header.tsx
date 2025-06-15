@@ -57,7 +57,7 @@ const Header: React.FC = () => {
                 <span className="text-white font-bold text-xl">🌾</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-800">Sri Vijaya Lakshmi</h1>
+                <h1 className="text-xl font-bold text-gray-800">Sri Vijaya Lakshmi Rice</h1>
                 <p className="text-sm text-gray-600">Premium Rice Agency</p>
               </div>
             </Link>

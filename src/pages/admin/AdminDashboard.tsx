@@ -216,9 +216,11 @@ const AdminDashboard: React.FC = () => {
             <option value="all">All Orders</option>
             <option value="pending">Pending</option>
             <option value="prepaid">Prepaid</option>
+            <option value="preparing">Preparing</option>
             <option value="fully_paid">Fully Paid</option>
             <option value="dispatched">Dispatched</option>
             <option value="delivered">Delivered</option>
+            <option value="canceled">Canceled</option>
           </select>
         </div>
       </div>
@@ -337,8 +339,11 @@ const AdminDashboard: React.FC = () => {
                         <option value="pending">Pending</option>
                         <option value="prepaid">Prepaid</option>
                         <option value="fully_paid">Fully Paid</option>
+                        <option value="preparing">Preparing</option>
                         <option value="dispatched">Dispatched</option>
                         <option value="delivered">Delivered</option>
+                        <option value="canceled">Canceled</option>
+            
                       </select>
                     </div>
                   </td>

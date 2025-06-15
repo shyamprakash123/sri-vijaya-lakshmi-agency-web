@@ -11,6 +11,8 @@ import { encryptOrderInfo } from '../lib/EncryptToken';
 import { useAuth } from '../hooks/useAuth';
 import { generateUpiLink } from '../lib/UPILinkGenerator';
 import PayNowSectionCheckout from '../components/ui/PayNowSectionCheckout';
+import toast from 'react-hot-toast';
+import { Toaster } from 'react-hot-toast';
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -173,7 +175,7 @@ const CheckoutPage: React.FC = () => {
     // return;
 
     try {
-      const order = await createOrder(
+      const {status, value} = await createOrder(
         cartItems,
         deliveryAddress,
         orderType,
@@ -184,10 +186,15 @@ const CheckoutPage: React.FC = () => {
         discount
       );
 
+      if(status === 'failed'){
+        toast.error("Order cannot be created. Stock is not available or Please complete payment or cancel your existing order.");
+        return;
+      }
+
       const orderInfo = {
-        order_id: order.id,
+        order_id: value?.id,
         user_id: user?.id,
-        amount: order.total_amount,
+        amount: value?.total_amount,
       };
 
       const encryptedInfo = encryptOrderInfo(orderInfo);
@@ -195,12 +202,12 @@ const CheckoutPage: React.FC = () => {
       const upiUrl = generateUpiLink({
         payeeVPA: import.meta.env.VITE_UPI_ID,
         payeeName: 'Sri Vijaya Lakshmi',
-        amount: order.total_amount,
+        amount: value?.total_amount,
         transactionNote: encryptedInfo
       });
 
       setPaymentUrl(upiUrl);
-      setOrderData(order);
+      setOrderData(value);
 
       // Clear cart and redirect to order confirmation
       clearCart();
@@ -251,8 +258,8 @@ const CheckoutPage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <Toaster position="top-right" reverseOrder={false} />
       <h1 className="text-3xl font-bold text-gray-800 mb-8">Checkout</h1>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Checkout Form */}
         <div className="lg:col-span-2 space-y-6">

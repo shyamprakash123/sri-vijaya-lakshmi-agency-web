@@ -6,8 +6,12 @@ import { useOrders } from '../../hooks/useOrders';
 import { useCoupons } from '../../hooks/useCoupons';
 import { Product, PriceSlab, Address } from '../../types';
 import LocationPicker from '../location/LocationPicker';
-import SuggestedVehicleCard from '../SuggestedVehicleCard';
-import { useToast } from '../../hooks/useToast';
+import { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
+import { generateUpiLink } from '../../lib/UPILinkGenerator';
+import { encryptOrderInfo } from '../../lib/EncryptToken';
+import PayNowSectionCheckout from '../ui/PayNowSectionCheckout';
+import { useAuth } from '../../hooks/useAuth';
 
 interface PreOrderItem {
   product: Product;
@@ -17,7 +21,7 @@ interface PreOrderItem {
 
 const PreOrderFlow: React.FC = () => {
   const navigate = useNavigate();
-  const { error } = useToast();
+  const { user } = useAuth();
   const { products, loading: productsLoading } = useProducts();
   const { createOrder, loading: orderLoading } = useOrders();
   const { validateCoupon, loading: couponLoading } = useCoupons();
@@ -37,6 +41,8 @@ const PreOrderFlow: React.FC = () => {
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [discount, setDiscount] = useState(0);
   const [transportationRequired, setTransportationRequired] = useState(false);
+  const [paymentUrl, setPaymentUrl] = useState(null);
+  const [orderData, setOrderData] = useState(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const timeSlots = [
@@ -191,7 +197,6 @@ const PreOrderFlow: React.FC = () => {
           newErrors.pincode = 'Pincode is required';
         }
         if (gstNumber !== "" && !isValidGst) {
-          error("Enter Valid Gst Number");
           newErrors.GST = 'Valid Gst is required';
         }
         break;
@@ -237,7 +242,7 @@ const PreOrderFlow: React.FC = () => {
 
     try {
       const scheduledDelivery = `${selectedDate}T${selectedTime.split(' - ')[0]}`;
-      const order = await createOrder(
+      const { status, value } = await createOrder(
         preOrderItems.map(item => ({
           product: item.product,
           quantity: item.quantity,
@@ -252,7 +257,21 @@ const PreOrderFlow: React.FC = () => {
         scheduledDelivery
       );
 
-      navigate(`/order/${order.id}`);
+      if (status === 'failed') {
+        toast.error("Order cannot be created. Stock is not available or Please complete payment or cancel your existing order.");
+        return;
+      }
+
+      const orderInfo = {
+        order_id: value?.id,
+        user_id: user?.id,
+        amount: value?.total_amount,
+      };
+
+      const encryptedInfo = encryptOrderInfo(orderInfo);
+
+      setOrderData(value);
+
     } catch (error) {
       setErrors(prev => ({
         ...prev,
@@ -260,6 +279,25 @@ const PreOrderFlow: React.FC = () => {
       }));
     }
   };
+
+  if (orderData !== null) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <PayNowSectionCheckout
+          upiUrl={generateUpiLink({
+            payeeVPA: import.meta.env.VITE_UPI_ID,
+            payeeName: 'Sri Vijaya Lakshmi',
+            amount: orderData.total_amount / 2,
+            transactionNote: encryptOrderInfo({
+              order_id: orderData.id,
+              user_id: user?.id,
+              amount: orderData.total_amount,
+            })
+          })}
+        />
+      </div>
+    );
+  }
 
   const renderStepContent = () => {
     switch (currentStep) {

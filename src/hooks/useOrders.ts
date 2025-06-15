@@ -15,7 +15,7 @@ export const useOrders = () => {
     transportationRequired?: boolean,
     couponCode?: string,
     couponDiscount?: number
-  ): Promise<Order> => {
+  ): Promise<{status: 'ok' | 'failed', value?: Order}> => {
     try {
       setLoading(true);
       setError(null);
@@ -43,13 +43,12 @@ export const useOrders = () => {
         }))
       };
 
-      console.log(orderData);
-
       const order = await orderService.create(orderData);
-      return order;
+      return {status: 'ok', value: order};
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create order';
       setError(errorMessage);
+      return {status: 'failed', value: errorMessage};
       throw new Error(errorMessage);
     } finally {
       setLoading(false);

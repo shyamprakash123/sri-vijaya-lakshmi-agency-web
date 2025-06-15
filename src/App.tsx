@@ -19,6 +19,7 @@ import PrivacyPolicy from './pages/policies/PrivacyPolicy';
 import TermsOfService from './pages/policies/TermsOfService';
 import ShippingPolicy from './pages/policies/ShippingPolicy';
 import ScrollToTop from './components/ui/ScrollToTop';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 function App() {
   return (
@@ -34,12 +35,12 @@ function App() {
               <Route path="/products" element={<ProductsPage />} />
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/cart" element={<CartPage />} />
-              <Route path="/checkout" element={<CheckoutPage />} />
-              <Route path="/order/:id" element={<OrderPage />} />
-              <Route path="/preorder" element={<PreOrderPage />} />
-              <Route path="/orders" element={<TrackOrderPage />} />
+              <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+              <Route path="/order/:id" element={<ProtectedRoute><OrderPage /></ProtectedRoute>} />
+              <Route path="/preorder" element={<ProtectedRoute><PreOrderPage /></ProtectedRoute>} />
+              <Route path="/orders" element={<ProtectedRoute><TrackOrderPage /></ProtectedRoute>} />
               <Route path="/contact" element={<ContactPage />} />
-              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin" element={<ProtectedRoute requiredRole={['admin']}><AdminDashboard /></ProtectedRoute>} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/shipping-policy" element={<ShippingPolicy />} />

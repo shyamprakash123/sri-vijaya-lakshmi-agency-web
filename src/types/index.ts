@@ -39,7 +39,7 @@ export interface Order {
   delivery_address: Address;
   order_type: 'instant' | 'preorder';
   payment_status: 'pending' | 'partial' | 'completed';
-  order_status: 'pending' | 'prepaid' | 'fully_paid' | 'dispatched' | 'delivered';
+  order_status: 'pending' | 'prepaid' | 'fully_paid' | 'dispatched' | 'delivered' | 'canceled';
   payment_hash: string;
   upi_link: string;
   created_at: string;
