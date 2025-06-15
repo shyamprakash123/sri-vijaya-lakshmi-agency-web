@@ -309,7 +309,7 @@ const TrackOrderPage: React.FC = () => {
                 <span>WhatsApp Support</span>
               </a>
               <a
-                href="mailto:support@svlrice.com"
+                href="mailto:contact@srivijayalakshmirice.in"
                 className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
               >
                 <Mail size={18} />

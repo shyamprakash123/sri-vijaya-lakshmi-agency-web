@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Percent, Package, CheckCircle, ArrowRight, MapPin, CreditCard, Loader2 } from 'lucide-react';
+import { Calendar, Clock, Percent, Package, CheckCircle, ArrowRight, MapPin, CreditCard, Loader2, Truck, Store } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useProducts } from '../../hooks/useProducts';
 import { useOrders } from '../../hooks/useOrders';
 import { useCoupons } from '../../hooks/useCoupons';
 import { Product, PriceSlab, Address } from '../../types';
 import LocationPicker from '../location/LocationPicker';
+import SuggestedVehicleCard from '../SuggestedVehicleCard';
+import { useToast } from '../../hooks/useToast';
 
 interface PreOrderItem {
   product: Product;
@@ -15,9 +17,12 @@ interface PreOrderItem {
 
 const PreOrderFlow: React.FC = () => {
   const navigate = useNavigate();
+  const { error } = useToast();
   const { products, loading: productsLoading } = useProducts();
   const { createOrder, loading: orderLoading } = useOrders();
   const { validateCoupon, loading: couponLoading } = useCoupons();
+  const [gstNumber, setGstNumber] = useState('');
+  const [isValidGst, setIsValidGst] = useState(true);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [preOrderItems, setPreOrderItems] = useState<PreOrderItem[]>([]);
@@ -28,10 +33,10 @@ const PreOrderFlow: React.FC = () => {
     pincode: '',
     landmark: ''
   });
-  const [gstNumber, setGstNumber] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [discount, setDiscount] = useState(0);
+  const [transportationRequired, setTransportationRequired] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const timeSlots = [
@@ -50,6 +55,17 @@ const PreOrderFlow: React.FC = () => {
     { id: 3, title: 'Delivery Address', icon: MapPin },
     { id: 4, title: 'Payment', icon: CreditCard }
   ];
+
+  const validateGst = (value: string) => {
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    return gstRegex.test(value.toUpperCase());
+  };
+
+  const handleGstChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase();
+    setGstNumber(value);
+    setIsValidGst(validateGst(value));
+  };
 
   const addToPreOrder = (product: Product, quantity: number = 1) => {
     if (!product.price_slabs || product.price_slabs.length === 0) return;
@@ -174,6 +190,10 @@ const PreOrderFlow: React.FC = () => {
         if (!deliveryAddress.pincode.trim()) {
           newErrors.pincode = 'Pincode is required';
         }
+        if (gstNumber !== "" && !isValidGst) {
+          error("Enter Valid Gst Number");
+          newErrors.GST = 'Valid Gst is required';
+        }
         break;
     }
 
@@ -184,6 +204,8 @@ const PreOrderFlow: React.FC = () => {
   const handleNextStep = () => {
     if (validateStep(currentStep)) {
       setCurrentStep(prev => Math.min(prev + 1, 4));
+      const section = document.getElementById('processSection');
+      section?.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
@@ -276,8 +298,8 @@ const PreOrderFlow: React.FC = () => {
                       </div>
                       <div className="absolute top-4 right-4">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${product.available_quantity > 0
-                            ? 'bg-green-500 text-white'
-                            : 'bg-red-500 text-white'
+                          ? 'bg-green-500 text-white'
+                          : 'bg-red-500 text-white'
                           }`}>
                           {product.available_quantity > 0 ? 'In Stock' : 'Out of Stock'}
                         </span>
@@ -431,8 +453,9 @@ const PreOrderFlow: React.FC = () => {
 
       case 3:
         return (
-          <div className="max-w-2xl mx-auto space-y-6">
-            <div className="text-center mb-8">
+          <div className="space-y-6">
+
+            <div className="text-center pb-2 bg-white rounded-md">
               <h2 className="text-2xl font-bold text-gray-800 mb-2">Delivery Address</h2>
               <p className="text-gray-600">Where should we deliver your order?</p>
             </div>
@@ -445,15 +468,69 @@ const PreOrderFlow: React.FC = () => {
             {errors.address && <p className="text-red-500 text-sm">{errors.address}</p>}
             {errors.pincode && <p className="text-red-500 text-sm">{errors.pincode}</p>}
 
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">GST Information (Optional)</h3>
-              <input
-                type="text"
-                placeholder="Enter GST Number"
-                value={gstNumber}
-                onChange={(e) => setGstNumber(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
+            <div className='flex space-x-5'>
+              <div className='flex-1'>
+                <div className="bg-white h-full rounded-lg shadow-md p-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">GST Information - For Bill of Supply (Optional)</h3>
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Enter GST Number"
+                      value={gstNumber}
+                      onChange={handleGstChange}
+                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${isValidGst ? 'border-gray-300 focus:ring-purple-500' : 'border-red-500 focus:ring-red-400'
+                        }`}
+                    />
+                    {!isValidGst && gstNumber.length > 0 && (
+                      <p className="text-sm text-red-500 mt-1">Invalid GST number format</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Transportation Option */}
+              <div className="flex-1 bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <Truck size={20} className="mr-2" />
+                  Transportation via Porter
+                </h2>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="transportation"
+                      checked={transportationRequired}
+                      onChange={(e) => setTransportationRequired(e.target.checked)}
+                      className="w-4 h-4 text-orange-500"
+                    />
+                    <label htmlFor="transportation" className="flex-1">
+                      <div className="font-medium">Transportation Required</div>
+                      <div className="text-sm text-gray-600">
+                        Select this option if you require a transportation service. Transportation Payment has to pay upon delivery. Your order will be dispatched within 1 hour.
+                      </div>
+                    </label>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Store size={16} className="text-blue-500" />
+                      <h4 className="font-semibold text-blue-800">Store Pickup Available</h4>
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${import.meta.env.VITE_STORE_LAT},${import.meta.env.VITE_STORE_LNG}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-primary-500 rounded-lg flex items-center text-white px-3 py-2 justify-center overflow-hidden hover:bg-primary-600 ">
+                        Get Directions
+                      </a>
+                    </div>
+                    <p className="text-sm text-blue-700">
+                      New Hafeezpet, Marthanda Nagar,<br />
+                      Hyderabad, Telangana - 500049
+                      POS machine available - All cards accepted.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         );
@@ -584,32 +661,34 @@ const PreOrderFlow: React.FC = () => {
       <div className="container mx-auto px-4">
         {/* Progress Steps */}
         <div className="max-w-4xl mx-auto mb-8">
-          <div className="flex items-center justify-between">
-            {steps.map((step, index) => (
-              <div key={step.id} className="flex items-center">
-                <div className={`flex items-center justify-center w-12 h-12 rounded-full border-2 transition-colors ${currentStep >= step.id
-                  ? 'bg-purple-500 border-purple-500 text-white'
-                  : 'bg-white border-gray-300 text-gray-500'
-                  }`}>
-                  <step.icon size={20} />
-                </div>
-                <div className="ml-3">
-                  <p className={`text-sm font-medium ${currentStep >= step.id ? 'text-purple-600' : 'text-gray-500'
+          <section id='processSection'>
+            <div className="flex items-center justify-between">
+              {steps.map((step, index) => (
+                <div key={step.id} className="flex items-center">
+                  <div className={`flex items-center justify-center w-12 h-12 rounded-full border-2 transition-colors ${currentStep >= step.id
+                    ? 'bg-purple-500 border-purple-500 text-white'
+                    : 'bg-white border-gray-300 text-gray-500'
                     }`}>
-                    Step {step.id}
-                  </p>
-                  <p className={`text-xs ${currentStep >= step.id ? 'text-purple-600' : 'text-gray-500'
-                    }`}>
-                    {step.title}
-                  </p>
+                    <step.icon size={20} />
+                  </div>
+                  <div className="ml-3">
+                    <p className={`text-sm font-medium ${currentStep >= step.id ? 'text-purple-600' : 'text-gray-500'
+                      }`}>
+                      Step {step.id}
+                    </p>
+                    <p className={`text-xs ${currentStep >= step.id ? 'text-purple-600' : 'text-gray-500'
+                      }`}>
+                      {step.title}
+                    </p>
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div className={`w-16 h-0.5 mx-4 ${currentStep > step.id ? 'bg-purple-500' : 'bg-gray-300'
+                      }`} />
+                  )}
                 </div>
-                {index < steps.length - 1 && (
-                  <div className={`w-16 h-0.5 mx-4 ${currentStep > step.id ? 'bg-purple-500' : 'bg-gray-300'
-                    }`} />
-                )}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </section>
         </div>
 
         {/* Step Content */}

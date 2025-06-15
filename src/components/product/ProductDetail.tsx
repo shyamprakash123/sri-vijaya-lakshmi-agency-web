@@ -284,7 +284,7 @@ const ProductDetail: React.FC = () => {
             <div className="p-4 bg-blue-50 rounded-lg">
               <h4 className="font-semibold text-blue-800 mb-2">Contact</h4>
               <p className="text-sm text-blue-700">📞 +91 8374237713</p>
-              <p className="text-sm text-blue-700">📧 contact@vijayalakshmirice.in</p>
+              <p className="text-sm text-blue-700">📧 contact@srivijayalakshmirice.in</p>
             </div>
             <div className="p-4 bg-green-50 rounded-lg">
               <h4 className="font-semibold text-green-800 mb-2">Facilities</h4>

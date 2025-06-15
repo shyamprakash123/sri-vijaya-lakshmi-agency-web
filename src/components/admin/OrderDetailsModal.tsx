@@ -352,7 +352,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onClose, 
               <div className="company-tagline">Premium Rice Delivery Service</div>
               <div className="company-contact">
                 📍 New Hafeezpet, Marthanda Nagar, Hyderabad, Telangana - 500049<br />
-                📞 +91 8374237713 | 📧 contact@vijayalakshmirice.in
+                📞 +91 8374237713 | 📧 contact@srivijayalakshmirice.in
               </div>
             </div>
 
@@ -629,7 +629,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onClose, 
             {/* Print Footer (only visible in print) */}
             <div className="footer" style={{ display: 'none' }}>
               <p>Thank you for choosing Sri Vijaya Lakshmi Agency!</p>
-              <p>For support, contact us at +91 8374237713 or contact@vijayalakshmirice.in</p>
+              <p>For support, contact us at +91 8374237713 or contact@srivijayalakshmirice.in</p>
               <p style={{ marginTop: '10px', fontSize: '10px' }}>
                 This is a computer-generated document. No signature required.
               </p>

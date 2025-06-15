@@ -7,6 +7,9 @@ import { useCoupons } from '../hooks/useCoupons';
 import { Address } from '../types';
 import LocationPicker from '../components/location/LocationPicker';
 import SuggestedVehicleCard from '../components/SuggestedVehicleCard';
+import { encryptOrderInfo } from '../lib/EncryptToken';
+import { useAuth } from '../hooks/useAuth';
+import { generateUpiLink } from '../lib/UPILinkGenerator';
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -19,6 +22,7 @@ const CheckoutPage: React.FC = () => {
     pincode: '',
     landmark: ''
   });
+  const { user } = useAuth();
   const [gstNumber, setGstNumber] = useState('');
   const [orderType, setOrderType] = useState<'instant' | 'preorder'>('instant');
   const [scheduledDelivery, setScheduledDelivery] = useState('');
@@ -32,8 +36,7 @@ const CheckoutPage: React.FC = () => {
   const [suggestedVehicle, setSuggestedVehicle] = useState(null);
 
   const subtotal = getTotalAmount();
-  const transportationAmount = 0; // Will be paid to Porter directly
-  const finalAmount = subtotal - discount + transportationAmount;
+  const finalAmount = subtotal - discount;
 
   // Check stock availability for all cart items
   const checkStockAvailability = () => {
@@ -149,6 +152,8 @@ const CheckoutPage: React.FC = () => {
 
     if (!validateForm()) return;
 
+    // return;
+
     try {
       const order = await createOrder(
         cartItems,
@@ -157,14 +162,31 @@ const CheckoutPage: React.FC = () => {
         gstNumber || undefined,
         scheduledDelivery || undefined,
         transportationRequired,
-        transportationAmount,
         appliedCoupon?.code,
         discount
       );
 
+      const orderInfo = {
+        orderId: order.id,
+        userMeta: user?.user_metadata,
+        amount: order.total_amount,
+      };
+
+      const encryptedInfo = encryptOrderInfo(orderInfo);
+
+      const upiUrl = generateUpiLink({
+        payeeVPA: import.meta.env.VITE_UPI_ID,
+        payeeName: 'Sri Vijaya Lakshmi',
+        amount: order.total_amount,
+        transactionNote: encryptedInfo
+      });
+      
+      // Use in anchor tag or open directly
+      window.open(upiUrl, '_blank');
+
       // Clear cart and redirect to order confirmation
       clearCart();
-      navigate(`/order/${order.id}`);
+      navigate(`/orders`);
     } catch (error) {
       setErrors(prev => ({
         ...prev,
@@ -263,7 +285,7 @@ const CheckoutPage: React.FC = () => {
 
           {/* GST Number */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">GST Information (Optional)</h2>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">GST Information - For Bill of Supply (Optional)</h2>
             <input
               type="text"
               placeholder="Enter GST Number"
@@ -317,16 +339,16 @@ const CheckoutPage: React.FC = () => {
                   <Store size={16} className="text-blue-500" />
                   <h4 className="font-semibold text-blue-800">Store Pickup Available</h4>
                   <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${import.meta.env.VITE_STORE_LAT},${import.meta.env.VITE_STORE_LNG}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-primary-500 rounded-lg flex items-center text-white px-3 py-2 justify-center overflow-hidden hover:bg-primary-600 ">
-                        Get Directions
-                    </a>
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${import.meta.env.VITE_STORE_LAT},${import.meta.env.VITE_STORE_LNG}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-primary-500 rounded-lg flex items-center text-white px-3 py-2 justify-center overflow-hidden hover:bg-primary-600 ">
+                    Get Directions
+                  </a>
                 </div>
                 <p className="text-sm text-blue-700">
-                New Hafeezpet, Marthanda Nagar,<br />
-                Hyderabad, Telangana - 500049
+                  New Hafeezpet, Marthanda Nagar,<br />
+                  Hyderabad, Telangana - 500049
                   POS machine available - All cards accepted.
                 </p>
               </div>

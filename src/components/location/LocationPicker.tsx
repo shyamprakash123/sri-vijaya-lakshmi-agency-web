@@ -141,8 +141,6 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
       const center = map.getCenter();
       const { lat, lng } = center;
 
-      console.log(lat, lng);
-
       await reverseGeoCode(lat, lng);
     });
   };

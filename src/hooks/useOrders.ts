@@ -13,7 +13,6 @@ export const useOrders = () => {
     gstNumber?: string,
     scheduledDelivery?: string,
     transportationRequired?: boolean,
-    transportationAmount?: number,
     couponCode?: string,
     couponDiscount?: number
   ): Promise<Order> => {
@@ -24,11 +23,7 @@ export const useOrders = () => {
       const subtotalAmount = cartItems.reduce((sum, item) => 
         sum + (item.selectedSlab.price_per_bag * item.quantity), 0);
       
-      const totalAmount = subtotalAmount - (couponDiscount || 0) + (transportationAmount || 0);
-
-      // Generate payment hash and UPI link
-      const paymentHash = generatePaymentHash();
-      const upiLink = generateUPILink(totalAmount, paymentHash);
+      const totalAmount = subtotalAmount - (couponDiscount || 0);
 
       const orderData = {
         total_amount: totalAmount,
@@ -38,11 +33,8 @@ export const useOrders = () => {
         gst_number: gstNumber,
         delivery_address: deliveryAddress,
         order_type: orderType,
-        payment_hash: paymentHash,
-        upi_link: upiLink,
         scheduled_delivery: scheduledDelivery,
         transportation_required: transportationRequired || false,
-        transportation_amount: transportationAmount,
         items: cartItems.map(item => ({
           product_id: item.product.id,
           quantity: item.quantity,
@@ -50,6 +42,8 @@ export const useOrders = () => {
           slab_label: item.selectedSlab.label
         }))
       };
+
+      console.log(orderData);
 
       const order = await orderService.create(orderData);
       return order;
@@ -101,18 +95,4 @@ export const useOrders = () => {
     loading,
     error
   };
-};
-
-// Utility functions
-const generatePaymentHash = (): string => {
-  const timestamp = Date.now().toString();
-  const random = Math.random().toString(36).substring(2);
-  return `SVL_${timestamp}_${random}`.toUpperCase();
-};
-
-const generateUPILink = (amount: number, hash: string): string => {
-  const upiId = import.meta.env.VITE_UPI_ID || 'merchant@upi';
-  const merchantName = 'Sri Vijaya Lakshmi Agency';
-  
-  return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(merchantName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(`Order ${hash}`)}&tr=${hash}`;
 };

@@ -213,8 +213,6 @@ export const orderService = {
     gst_number?: string;
     delivery_address: any;
     order_type: 'instant' | 'preorder';
-    payment_hash: string;
-    upi_link: string;
     scheduled_delivery?: string;
     transportation_required?: boolean;
     transportation_amount?: number;
