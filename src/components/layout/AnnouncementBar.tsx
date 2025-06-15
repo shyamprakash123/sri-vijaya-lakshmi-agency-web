@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Megaphone, Loader2 } from 'lucide-react';
+import { Megaphone, Loader2 } from 'lucide-react';
 import { announcementService } from '../../lib/supabase';
 
 interface Announcement {
@@ -81,14 +81,6 @@ const AnnouncementBar: React.FC = () => {
             </p>
           </div>
         </div>
-        
-        <button
-          onClick={() => setIsVisible(false)}
-          className="ml-4 p-1.5 hover:bg-white hover:bg-opacity-20 rounded-full transition-colors flex-shrink-0"
-          aria-label="Close announcement"
-        >
-          <X size={16} />
-        </button>
       </div>
       
       {announcements.length > 1 && (

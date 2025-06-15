@@ -17,3 +17,21 @@
     z-index: 10;
   }
   
+  /* globals.css */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #F7931E;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #e57f0b;
+}
+
+html {
+  scroll-behavior: smooth;
+}

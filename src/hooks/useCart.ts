@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 
 interface CartStore {
   cartItems: CartItem[];
+  getTotalWeight: () => number;
   addToCart: (product: Product, quantity: number, slab: PriceSlab) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   removeFromCart: (productId: string) => void;
@@ -42,12 +43,23 @@ export const useCart = create<CartStore>()(
     (set, get) => ({
       cartItems: [],
 
+      getTotalWeight() {
+        const { cartItems } = get();
+      
+        const weight = cartItems.reduce((total, item) => {
+          const itemWeight = parseFloat(item.product.weight.replace(/kg/i, '').trim()) || 0;
+          return total + itemWeight * item.quantity;
+        }, 0);
+      
+        return weight;
+      },
+
       addToCart: (product: Product, quantity = 1, slab?: PriceSlab) => {
         const { cartItems } = get();
         
         // Check stock availability
         if (quantity > product.available_quantity) {
-          toast.error(`Only ${product.available_quantity} bags available for ${product.name}`);
+          toast.error(`Available Quantity Exceded for ${product.name}`);
           return;
         }
         
@@ -60,14 +72,14 @@ export const useCart = create<CartStore>()(
           const newQuantity = existingItem.quantity + quantity;
           
           if (newQuantity > product.available_quantity) {
-            toast.error(`Only ${product.available_quantity} bags available for ${product.name}`);
+            toast.error(`Available Quantity Exceded for ${product.name}`);
             return;
           }
 
-          if (newQuantity > 50) {
-            toast.error('Maximum 50 bags per product allowed');
-            return;
-          }
+          // if (newQuantity > 50) {
+          //   toast.error('Maximum 70 bags per product allowed');
+          //   return;
+          // }
 
           // Update with new quantity and recalculate slab
           const newSlab = getSlabForQuantity(product, newQuantity);
@@ -83,7 +95,7 @@ export const useCart = create<CartStore>()(
           toast.success(`Updated ${product.name} quantity in cart`);
         } else {
           if (quantity > product.available_quantity) {
-            toast.error(`Only ${product.available_quantity} bags available for ${product.name}`);
+            toast.error(`Available Quantity Exceded for ${product.name}`);
             return;
           }
 
@@ -115,14 +127,14 @@ export const useCart = create<CartStore>()(
         if (!item) return;
 
         if (quantity > item.product.available_quantity) {
-          toast.error(`Only ${item.product.available_quantity} bags available for ${item.product.name}`);
+          toast.error(`Available Quantity Exceded for ${product.name}`);
           return;
         }
 
-        if (quantity > 50) {
-          toast.error('Maximum 50 bags per product allowed');
-          return;
-        }
+        // if (quantity > 50) {
+        //   toast.error('Maximum 50 bags per product allowed');
+        //   return;
+        // }
 
         // Recalculate slab based on new quantity
         const newSlab = getSlabForQuantity(item.product, quantity);

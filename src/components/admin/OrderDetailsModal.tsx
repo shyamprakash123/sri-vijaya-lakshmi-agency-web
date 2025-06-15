@@ -351,8 +351,8 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onClose, 
               <div className="company-name">Sri Vijaya Lakshmi Agency</div>
               <div className="company-tagline">Premium Rice Delivery Service</div>
               <div className="company-contact">
-                📍 123 Rice Market Street, Chennai, Tamil Nadu 600001<br />
-                📞 +91 98765 43210 | 📧 info@svlrice.com
+                📍 New Hafeezpet, Marthanda Nagar, Hyderabad, Telangana - 500049<br />
+                📞 +91 8374237713 | 📧 contact@vijayalakshmirice.in
               </div>
             </div>
 
@@ -604,7 +604,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onClose, 
             {/* Print Footer (only visible in print) */}
             <div className="footer" style={{ display: 'none' }}>
               <p>Thank you for choosing Sri Vijaya Lakshmi Agency!</p>
-              <p>For support, contact us at +91 98765 43210 or info@svlrice.com</p>
+              <p>For support, contact us at +91 8374237713 or contact@vijayalakshmirice.in</p>
               <p style={{ marginTop: '10px', fontSize: '10px' }}>
                 This is a computer-generated document. No signature required.
               </p>

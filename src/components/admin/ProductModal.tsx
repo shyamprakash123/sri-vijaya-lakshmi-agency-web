@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, Plus, Trash2 } from 'lucide-react';
 import { Product, PriceSlab } from '../../types';
+import ImageUpload from '../ui/ImageUpload';
+import toast from 'react-hot-toast';
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -46,7 +48,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
         category: product.category,
         is_active: product.is_active
       });
-      
+
       if (product.price_slabs && product.price_slabs.length > 0) {
         setPriceSlabs(product.price_slabs.map(slab => ({
           min_quantity: slab.min_quantity,
@@ -87,9 +89,24 @@ const ProductModal: React.FC<ProductModalProps> = ({
   };
 
   const handleSlabChange = (index: number, field: keyof Omit<PriceSlab, 'id' | 'product_id'>, value: any) => {
-    setPriceSlabs(prev => prev.map((slab, i) => 
+    setPriceSlabs(prev => prev.map((slab, i) =>
       i === index ? { ...slab, [field]: value } : slab
     ));
+  };
+
+  const handleImageUpload = (url: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      image: url[0]
+    }));
+    toast.success(`${url.length} image(s) uploaded successfully!`);
+  };
+
+  const handleImageRemove = () => {
+    setFormData(prev => ({
+      ...prev,
+      image: ""
+    }));
   };
 
   const addPriceSlab = () => {
@@ -257,19 +274,19 @@ const ProductModal: React.FC<ProductModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Image URL *
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Product Image
               </label>
-              <input
-                type="url"
-                name="image"
-                value={formData.image}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                placeholder="Enter image URL"
-              />
-              {errors.image && <p className="text-red-500 text-sm mt-1">{errors.image}</p>}
+
             </div>
+            <ImageUpload
+              onUpload={handleImageUpload}
+              onRemove={handleImageRemove}
+              existingImages={formData.image ? [formData.image] : []}
+              maxImages={1}
+              folder="products"
+              multiple={false}
+            />
           </div>
 
           <div>
@@ -299,7 +316,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
                 <span>Add Slab</span>
               </button>
             </div>
-            
+
             <div className="space-y-4">
               {priceSlabs.map((slab, index) => (
                 <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-3 p-4 bg-gray-50 rounded-lg">
@@ -315,7 +332,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
                       <p className="text-red-500 text-xs mt-1">{errors[`slab_${index}_label`]}</p>
                     )}
                   </div>
-                  
+
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Min Qty</label>
                     <input
@@ -329,7 +346,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
                       <p className="text-red-500 text-xs mt-1">{errors[`slab_${index}_min`]}</p>
                     )}
                   </div>
-                  
+
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Max Qty</label>
                     <input
@@ -340,7 +357,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
                       placeholder="No limit"
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Price (₹)</label>
                     <input
@@ -355,7 +372,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
                       <p className="text-red-500 text-xs mt-1">{errors[`slab_${index}_price`]}</p>
                     )}
                   </div>
-                  
+
                   <div className="flex items-end">
                     <button
                       type="button"

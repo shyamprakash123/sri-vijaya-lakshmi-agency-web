@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, Upload, Eye } from 'lucide-react';
+import ImageUpload from '../ui/ImageUpload';
+import toast from 'react-hot-toast';
 
 interface BannerModalProps {
   isOpen: boolean;
@@ -56,17 +58,32 @@ const BannerModal: React.FC<BannerModalProps> = ({
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
-               name === 'order_index' ? parseInt(value) || 0 : value
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked :
+        name === 'order_index' ? parseInt(value) || 0 : value
     }));
-    
+
     if (name === 'image') {
       setImagePreview(value);
     }
-    
+
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+  };
+
+  const handleImageUpload = (url: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      image: url[0]
+    }));
+    toast.success(`${url.length} image(s) uploaded successfully!`);
+  };
+
+  const handleImageRemove = () => {
+    setFormData(prev => ({
+      ...prev,
+      image: ""
+    }));
   };
 
   const validateForm = () => {
@@ -81,7 +98,7 @@ const BannerModal: React.FC<BannerModalProps> = ({
     if (formData.image && !isValidUrl(formData.image)) {
       newErrors.image = 'Please enter a valid image URL';
     }
-    if (formData.link && !isValidUrl(formData.link)) {
+    if (!formData.link) {
       newErrors.link = 'Please enter a valid link URL';
     }
 
@@ -176,41 +193,26 @@ const BannerModal: React.FC<BannerModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Image URL *
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Product Image
             </label>
-            <input
-              type="url"
-              name="image"
-              value={formData.image}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              placeholder="https://example.com/banner-image.jpg"
-            />
-            {errors.image && <p className="text-red-500 text-sm mt-1">{errors.image}</p>}
-            
-            {/* Image Preview */}
-            {imagePreview && (
-              <div className="mt-3">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Preview</label>
-                <div className="relative h-32 bg-gray-100 rounded-lg overflow-hidden">
-                  <img
-                    src={imagePreview}
-                    alt="Banner preview"
-                    className="w-full h-full object-cover"
-                    onError={() => setImagePreview('')}
-                  />
-                </div>
-              </div>
-            )}
+
           </div>
+          <ImageUpload
+            onUpload={handleImageUpload}
+            onRemove={handleImageRemove}
+            existingImages={formData.image ? [formData.image] : []}
+            maxImages={1}
+            folder="banners"
+            multiple={false}
+          />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Link URL (Optional)
             </label>
             <input
-              type="url"
+              type="text"
               name="link"
               value={formData.link}
               onChange={handleInputChange}

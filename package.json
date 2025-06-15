@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.38.0",
+    "browser-image-compression": "^2.0.2",
+    "framer-motion": "^12.18.1",
     "lucide-react": "^0.344.0",
     "olamaps-web-sdk": "^1.1.2",
     "react": "^18.3.1",

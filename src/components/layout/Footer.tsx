@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, Mail, MapPin, Clock, Shield, Truck } from 'lucide-react';
+import { Phone, Mail, MapPin, Clock, Shield, Truck, Heart } from 'lucide-react';
 
 const Footer: React.FC = () => {
   return (
@@ -15,8 +15,9 @@ const Footer: React.FC = () => {
                 <span className="text-white font-bold">🌾</span>
               </div>
               <div>
-                <h3 className="text-lg font-bold">Sri Vijaya Lakshmi</h3>
+                <h3 className="text-lg font-bold">Sri Vijaya Lakshmi Rice</h3>
                 <p className="text-sm text-gray-400">Premium Rice Agency</p>
+                <p className="text-sm text-gray-400">GSTIN: 36AOVPB3357C1ZZ</p>
               </div>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">
@@ -43,17 +44,17 @@ const Footer: React.FC = () => {
             <ul className="space-y-3">
               <li className="flex items-center space-x-3">
                 <Phone size={16} className="text-orange-500" />
-                <span className="text-gray-400 text-sm">+91 98765 43210</span>
+                <span className="text-gray-400 text-sm">+91 8374237713</span>
               </li>
               <li className="flex items-center space-x-3">
                 <Mail size={16} className="text-orange-500" />
-                <span className="text-gray-400 text-sm">info@svlrice.com</span>
+                <span className="text-gray-400 text-sm">contact@vijayalakshmirice.in</span>
               </li>
               <li className="flex items-start space-x-3">
                 <MapPin size={16} className="text-orange-500 mt-1" />
                 <span className="text-gray-400 text-sm">
-                  123 Rice Market Street<br />
-                  Chennai, Tamil Nadu 600001
+                New Hafeezpet, Marthanda Nagar, <br />
+                Hyderabad, Telangana - 500049
                 </span>
               </li>
             </ul>
@@ -65,7 +66,7 @@ const Footer: React.FC = () => {
             <ul className="space-y-3">
               <li className="flex items-center space-x-3">
                 <Clock size={16} className="text-green-500" />
-                <span className="text-gray-400 text-sm">1 Hour Delivery</span>
+                <span className="text-gray-400 text-sm">1 Hour Dispatch</span>
               </li>
               <li className="flex items-center space-x-3">
                 <Shield size={16} className="text-blue-500" />
@@ -85,16 +86,24 @@ const Footer: React.FC = () => {
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between">
             <p className="text-gray-400 text-sm">
-              © 2024 Sri Vijaya Lakshmi Agency. All rights reserved.
+              © 2025 Sri Vijaya Lakshmi Agency. All rights reserved.
             </p>
+
+            <div className="flex items-center space-x-1 text-gray-400 text-sm mb-4 md:mb-0">
+              <span>Crafted with</span>
+              <Heart className="w-4 h-4 text-red-500" />
+              <span>by </span>
+              <Link to="https://dockpoint.in" target='_blank' className='text-white font-semibold hover:text-blue-300'>Dock Point</Link>
+            </div>
+
             <div className="flex items-center space-x-6 mt-4 md:mt-0">
-              <Link to="/policies" className="text-gray-400 hover:text-white text-sm transition-colors">
+              <Link to="/privacy-policy" className="text-gray-400 hover:text-white text-sm transition-colors">
                 Privacy Policy
               </Link>
-              <Link to="/policies" className="text-gray-400 hover:text-white text-sm transition-colors">
+              <Link to="/terms-of-service" className="text-gray-400 hover:text-white text-sm transition-colors">
                 Terms of Service
               </Link>
-              <Link to="/policies" className="text-gray-400 hover:text-white text-sm transition-colors">
+              <Link to="/shipping-policy" className="text-gray-400 hover:text-white text-sm transition-colors">
                 Shipping Policy
               </Link>
             </div>

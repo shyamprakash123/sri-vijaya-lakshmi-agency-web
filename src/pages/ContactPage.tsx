@@ -12,6 +12,8 @@ const ContactPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  const imageUrl = `https://api.olamaps.io/tiles/v1/styles/default-light-standard/static/78.356371,17.475702,15/800x600.png?marker=78.356371,17.475702|red|scale:1&api_key=${import.meta.env.VITE_OLA_MAPS_API_KEY || 'demo-key'}`;
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -20,13 +22,13 @@ const ContactPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     // Simulate form submission
     await new Promise(resolve => setTimeout(resolve, 1500));
-    
+
     setSubmitted(true);
     setLoading(false);
-    
+
     // Reset form after 3 seconds
     setTimeout(() => {
       setSubmitted(false);
@@ -44,19 +46,19 @@ const ContactPage: React.FC = () => {
     {
       icon: Phone,
       title: 'Phone',
-      details: ['+91 98765 43210', '+91 87654 32109'],
-      action: 'tel:+919876543210'
+      details: ['+91 8374237713', '+91 9959965561'],
+      action: 'tel:+918374237713'
     },
     {
       icon: Mail,
       title: 'Email',
-      details: ['info@svlrice.com', 'support@svlrice.com'],
-      action: 'mailto:info@svlrice.com'
+      details: ['contact@vijayalakshmirice.in', 'support@svlrice.com'],
+      action: 'mailto:contact@vijayalakshmirice.in'
     },
     {
       icon: MapPin,
       title: 'Address',
-      details: ['123 Rice Market Street', 'Chennai, Tamil Nadu 600001'],
+      details: ['New Hafeezpet, Marthanda Nagar, Hyderabad, Telangana - 500049'],
       action: 'https://maps.google.com'
     },
     {
@@ -100,7 +102,7 @@ const ContactPage: React.FC = () => {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">
               <a
-                href="https://wa.me/+919876543210"
+                href="https://wa.me/+918374237713"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-full font-semibold transition-colors transform hover:scale-105"
@@ -109,7 +111,7 @@ const ContactPage: React.FC = () => {
                 <span>WhatsApp Us</span>
               </a>
               <a
-                href="tel:+919876543210"
+                href="tel:+918374237713"
                 className="flex items-center space-x-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-6 py-3 rounded-full font-semibold transition-colors"
               >
                 <Phone size={20} />
@@ -222,7 +224,7 @@ const ContactPage: React.FC = () => {
                         value={formData.phone}
                         onChange={handleInputChange}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                        placeholder="+91 98765 43210"
+                        placeholder="+91 8374237713"
                       />
                     </div>
                     <div>
@@ -285,22 +287,51 @@ const ContactPage: React.FC = () => {
             {/* Map & Additional Info */}
             <div>
               <h2 className="text-3xl font-bold text-gray-800 mb-6">Visit Our Store</h2>
-              
-              {/* Map Placeholder */}
-              <div className="bg-gray-200 rounded-lg h-64 mb-6 flex items-center justify-center">
-                <div className="text-center">
-                  <MapPin size={48} className="text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500">Interactive Map</p>
-                  <p className="text-sm text-gray-400">123 Rice Market Street, Chennai</p>
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${import.meta.env.VITE_STORE_LAT},${import.meta.env.VITE_STORE_LNG}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-primary-500 rounded-lg flex items-center text-white px-3 py-2 justify-center overflow-hidden hover:bg-primary-600 ">
+                Get Directions
+              </a>
+              {/* Map Placeholder - Replace with actual map integration */}
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${import.meta.env.VITE_STORE_LAT},${import.meta.env.VITE_STORE_LNG}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-gray-200 rounded-lg h-64 flex items-center justify-center mb-4 overflow-hidden">
+                <img src={imageUrl} alt="Static Map" className="object-cover w-full h-full " />
+              </a>
+              <div className="text-center">
+                <MapPin size={48} className="text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-500 font-medium">Sri Vijaya Lakshmi Agency</p>
+                <p className="text-sm text-gray-400">123 Rice Market Street, Chennai</p>
+                <p className="text-sm text-gray-400">Tamil Nadu 600001</p>
+              </div>
+
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center mt-6">
+                <div className="p-4 bg-orange-50 rounded-lg">
+                  <h4 className="font-semibold text-orange-800 mb-2">Store Hours</h4>
+                  <p className="text-sm text-orange-700">Mon - Sat: 6:00 AM - 10:00 PM</p>
+                  <p className="text-sm text-orange-700">Sunday: 7:00 AM - 9:00 PM</p>
+                </div>
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-semibold text-blue-800 mb-2">Contact</h4>
+                  <p className="text-sm text-blue-700">📞 +91 8374237713</p>
+                  <p className="text-sm text-blue-700">📧 contact@vijayalakshmirice.in</p>
+                </div>
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <h4 className="font-semibold text-green-800 mb-2">Facilities</h4>
+                  <p className="text-sm text-green-700">💳 Card Payments</p>
                 </div>
               </div>
 
               {/* Store Info */}
-              <div className="bg-orange-50 rounded-lg p-6 mb-6">
+              <div className="bg-orange-50 rounded-lg p-6 mb-6 mt-6">
                 <h3 className="text-lg font-semibold text-orange-800 mb-3">Store Information</h3>
                 <div className="space-y-2 text-orange-700">
                   <p>🏪 Physical store available for walk-in customers</p>
-                  <p>🚗 Free parking available</p>
                   <p>💳 Cash and digital payments accepted</p>
                   <p>📦 Bulk orders welcome</p>
                 </div>
@@ -309,7 +340,7 @@ const ContactPage: React.FC = () => {
               {/* Quick Actions */}
               <div className="space-y-3">
                 <a
-                  href="https://wa.me/+919876543210?text=Hi! I need help with my order."
+                  href="https://wa.me/+918374237713?text=Hi! I need help with my order."
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2"
@@ -318,7 +349,7 @@ const ContactPage: React.FC = () => {
                   <span>Chat on WhatsApp</span>
                 </a>
                 <a
-                  href="tel:+919876543210"
+                  href="tel:+918374237713"
                   className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2"
                 >
                   <Phone size={20} />

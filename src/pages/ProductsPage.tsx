@@ -59,7 +59,7 @@ const ProductsPage: React.FC = () => {
 
   const getWhatsAppLink = (product: any) => {
     const message = `Hi! I'm interested in ${product.name} (${product.weight}). Please share more details.`;
-    const phoneNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '+919876543210';
+    const phoneNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '+918374237713';
     return `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
   };
 

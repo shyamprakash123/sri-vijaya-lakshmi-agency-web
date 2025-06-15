@@ -56,14 +56,14 @@ const PreOrderFlow: React.FC = () => {
 
     const existingItem = preOrderItems.find(item => item.product.id === product.id);
     const selectedSlab = getSlabForQuantity(product, quantity);
-    
+
     if (existingItem) {
       const newQuantity = existingItem.quantity + quantity;
       if (newQuantity > product.available_quantity) {
         setErrors(prev => ({ ...prev, stock: `Only ${product.available_quantity} bags available for ${product.name}` }));
         return;
       }
-      
+
       setPreOrderItems(prev => prev.map(item =>
         item.product.id === product.id
           ? { ...item, quantity: newQuantity, selectedSlab: getSlabForQuantity(product, newQuantity) }
@@ -74,10 +74,10 @@ const PreOrderFlow: React.FC = () => {
         setErrors(prev => ({ ...prev, stock: `Only ${product.available_quantity} bags available for ${product.name}` }));
         return;
       }
-      
+
       setPreOrderItems(prev => [...prev, { product, quantity, selectedSlab }]);
     }
-    
+
     setErrors(prev => ({ ...prev, stock: '' }));
   };
 
@@ -90,13 +90,13 @@ const PreOrderFlow: React.FC = () => {
     setPreOrderItems(prev => prev.map(item => {
       if (item.product.id === productId) {
         if (quantity > item.product.available_quantity) {
-          setErrors(prevErrors => ({ 
-            ...prevErrors, 
-            stock: `Only ${item.product.available_quantity} bags available for ${item.product.name}` 
+          setErrors(prevErrors => ({
+            ...prevErrors,
+            stock: `Only ${item.product.available_quantity} bags available for ${item.product.name}`
           }));
           return item;
         }
-        
+
         setErrors(prevErrors => ({ ...prevErrors, stock: '' }));
         return {
           ...item,
@@ -124,8 +124,8 @@ const PreOrderFlow: React.FC = () => {
       };
     }
 
-    const slab = product.price_slabs.find(slab => 
-      quantity >= slab.min_quantity && 
+    const slab = product.price_slabs.find(slab =>
+      quantity >= slab.min_quantity &&
       (slab.max_quantity === null || quantity <= slab.max_quantity)
     );
 
@@ -134,8 +134,8 @@ const PreOrderFlow: React.FC = () => {
 
   const getSubtotal = () => {
     return preOrderItems.reduce((total, item) => {
-      // Apply 15% preorder discount
-      const discountedPrice = Math.round(item.selectedSlab.price_per_bag * 0.85);
+      // Apply ₹10 preorder discount
+      const discountedPrice = Math.ceil(item.selectedSlab.price_per_bag - 10);
       return total + (discountedPrice * item.quantity);
     }, 0);
   };
@@ -215,14 +215,13 @@ const PreOrderFlow: React.FC = () => {
 
     try {
       const scheduledDelivery = `${selectedDate}T${selectedTime.split(' - ')[0]}`;
-      
       const order = await createOrder(
         preOrderItems.map(item => ({
           product: item.product,
           quantity: item.quantity,
           selectedSlab: {
             ...item.selectedSlab,
-            price_per_bag: Math.round(item.selectedSlab.price_per_bag * 0.85) // Apply preorder discount
+            price_per_bag: Math.ceil(item.selectedSlab.price_per_bag - 10) // Apply preorder discount
           }
         })),
         deliveryAddress,
@@ -233,9 +232,9 @@ const PreOrderFlow: React.FC = () => {
 
       navigate(`/order/${order.id}`);
     } catch (error) {
-      setErrors(prev => ({ 
-        ...prev, 
-        submit: error instanceof Error ? error.message : 'Failed to place order' 
+      setErrors(prev => ({
+        ...prev,
+        submit: error instanceof Error ? error.message : 'Failed to place order'
       }));
     }
   };
@@ -247,7 +246,7 @@ const PreOrderFlow: React.FC = () => {
           <div className="space-y-6">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-gray-800 mb-2">Select Products for Pre-Order</h2>
-              <p className="text-gray-600">Choose your rice varieties and quantities. Get 15% discount on all items!</p>
+              <p className="text-gray-600">Choose your rice varieties and quantities. Get ₹10 discount on all items!</p>
             </div>
 
             {errors.stock && (
@@ -272,12 +271,15 @@ const PreOrderFlow: React.FC = () => {
                       />
                       <div className="absolute top-4 left-4">
                         <span className="bg-purple-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                          15% OFF
+                          ₹10 OFF
                         </span>
                       </div>
                       <div className="absolute top-4 right-4">
-                        <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                          Stock: {product.available_quantity}
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${product.available_quantity > 0
+                            ? 'bg-green-500 text-white'
+                            : 'bg-red-500 text-white'
+                          }`}>
+                          {product.available_quantity > 0 ? 'In Stock' : 'Out of Stock'}
                         </span>
                       </div>
                     </div>
@@ -285,11 +287,11 @@ const PreOrderFlow: React.FC = () => {
                     <div className="p-6">
                       <h3 className="text-lg font-bold text-gray-800 mb-2">{product.name}</h3>
                       <p className="text-gray-600 text-sm mb-3">{product.description}</p>
-                      
+
                       <div className="flex items-center justify-between mb-4">
                         <div>
                           <span className="text-lg font-bold text-purple-500">
-                            ₹{product.price_slabs?.[0] ? Math.round(product.price_slabs[0].price_per_bag * 0.85) : Math.round(product.base_price * 0.85)}
+                            ₹{product.price_slabs?.[0] ? Math.round(product.price_slabs[0].price_per_bag - 10) : Math.round(product.base_price - 10)}
                           </span>
                           <span className="text-sm text-gray-500 line-through ml-2">
                             ₹{product.price_slabs?.[0]?.price_per_bag || product.base_price}
@@ -299,7 +301,11 @@ const PreOrderFlow: React.FC = () => {
                       </div>
 
                       <button
-                        onClick={() => addToPreOrder(product)}
+                        onClick={() => {
+                          addToPreOrder(product);
+                          const section = document.getElementById('nextBtn');
+                          section?.scrollIntoView({ behavior: 'smooth' });
+                        }}
                         disabled={product.available_quantity === 0}
                         className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 disabled:from-gray-400 disabled:to-gray-500 text-white py-2 px-4 rounded-lg font-semibold transition-all transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
                       >
@@ -328,7 +334,7 @@ const PreOrderFlow: React.FC = () => {
                           <h4 className="font-semibold text-gray-800">{item.product.name}</h4>
                           <p className="text-sm text-gray-600">{item.product.weight} • {item.selectedSlab.label}</p>
                           <p className="text-sm text-purple-600 font-medium">
-                            ₹{Math.round(item.selectedSlab.price_per_bag * 0.85)}/bag (15% off)
+                            ₹{Math.ceil(item.selectedSlab.price_per_bag - 10)}/bag (₹10/bag off)
                           </p>
                         </div>
                       </div>
@@ -358,7 +364,7 @@ const PreOrderFlow: React.FC = () => {
                 </div>
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold text-gray-800">Subtotal (with 15% discount)</span>
+                    <span className="text-lg font-semibold text-gray-800">Subtotal (with ₹10 for each bag discount)</span>
                     <span className="text-2xl font-bold text-purple-500">₹{getSubtotal()}</span>
                   </div>
                 </div>
@@ -408,11 +414,10 @@ const PreOrderFlow: React.FC = () => {
                     <button
                       key={index}
                       onClick={() => setSelectedTime(slot)}
-                      className={`w-full p-3 text-left rounded-lg border transition-colors ${
-                        selectedTime === slot
-                          ? 'bg-purple-500 text-white border-purple-500'
-                          : 'bg-white hover:bg-purple-50 border-gray-300'
-                      }`}
+                      className={`w-full p-3 text-left rounded-lg border transition-colors ${selectedTime === slot
+                        ? 'bg-purple-500 text-white border-purple-500'
+                        : 'bg-white hover:bg-purple-50 border-gray-300'
+                        }`}
                     >
                       {slot}
                     </button>
@@ -471,7 +476,7 @@ const PreOrderFlow: React.FC = () => {
                       {item.product.name} × {item.quantity}
                     </span>
                     <span className="font-medium">
-                      ₹{Math.round(item.selectedSlab.price_per_bag * 0.85) * item.quantity}
+                      ₹{Math.ceil(item.selectedSlab.price_per_bag - 10) * item.quantity}
                     </span>
                   </div>
                 ))}
@@ -523,17 +528,17 @@ const PreOrderFlow: React.FC = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal (with 15% preorder discount)</span>
+                  <span className="text-gray-600">Subtotal (with ₹10 for each bag preorder discount)</span>
                   <span className="font-medium">₹{getSubtotal()}</span>
                 </div>
-                
+
                 {discount > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Additional Coupon Discount</span>
                     <span>-₹{discount}</span>
                   </div>
                 )}
-                
+
                 <div className="border-t border-gray-200 pt-3">
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-semibold text-gray-800">Total Amount</span>
@@ -582,29 +587,25 @@ const PreOrderFlow: React.FC = () => {
           <div className="flex items-center justify-between">
             {steps.map((step, index) => (
               <div key={step.id} className="flex items-center">
-                <div className={`flex items-center justify-center w-12 h-12 rounded-full border-2 transition-colors ${
-                  currentStep >= step.id
-                    ? 'bg-purple-500 border-purple-500 text-white'
-                    : 'bg-white border-gray-300 text-gray-500'
-                }`}>
+                <div className={`flex items-center justify-center w-12 h-12 rounded-full border-2 transition-colors ${currentStep >= step.id
+                  ? 'bg-purple-500 border-purple-500 text-white'
+                  : 'bg-white border-gray-300 text-gray-500'
+                  }`}>
                   <step.icon size={20} />
                 </div>
                 <div className="ml-3">
-                  <p className={`text-sm font-medium ${
-                    currentStep >= step.id ? 'text-purple-600' : 'text-gray-500'
-                  }`}>
+                  <p className={`text-sm font-medium ${currentStep >= step.id ? 'text-purple-600' : 'text-gray-500'
+                    }`}>
                     Step {step.id}
                   </p>
-                  <p className={`text-xs ${
-                    currentStep >= step.id ? 'text-purple-600' : 'text-gray-500'
-                  }`}>
+                  <p className={`text-xs ${currentStep >= step.id ? 'text-purple-600' : 'text-gray-500'
+                    }`}>
                     {step.title}
                   </p>
                 </div>
                 {index < steps.length - 1 && (
-                  <div className={`w-16 h-0.5 mx-4 ${
-                    currentStep > step.id ? 'bg-purple-500' : 'bg-gray-300'
-                  }`} />
+                  <div className={`w-16 h-0.5 mx-4 ${currentStep > step.id ? 'bg-purple-500' : 'bg-gray-300'
+                    }`} />
                 )}
               </div>
             ))}
@@ -625,16 +626,18 @@ const PreOrderFlow: React.FC = () => {
           >
             Previous
           </button>
-          
+
           {currentStep < 4 ? (
-            <button
-              onClick={handleNextStep}
-              disabled={currentStep === 1 && preOrderItems.length === 0}
-              className="px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-lg font-semibold transition-all flex items-center space-x-2"
-            >
-              <span>Next</span>
-              <ArrowRight size={18} />
-            </button>
+            <section id='nextBtn'>
+              <button
+                onClick={handleNextStep}
+                disabled={currentStep === 1 && preOrderItems.length === 0}
+                className="px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-lg font-semibold transition-all flex items-center space-x-2"
+              >
+                <span>Next</span>
+                <ArrowRight size={18} />
+              </button>
+            </section>
           ) : null}
         </div>
       </div>

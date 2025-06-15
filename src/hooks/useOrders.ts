@@ -12,16 +12,14 @@ export const useOrders = () => {
     orderType: 'instant' | 'preorder',
     gstNumber?: string,
     scheduledDelivery?: string,
-    transportationRequired?: boolean,
-    transportationAmount?: number
+    transportationRequired?: boolean
   ): Promise<Order> => {
     try {
       setLoading(true);
       setError(null);
 
       const totalAmount = cartItems.reduce((sum, item) => 
-        sum + (item.selectedSlab.price_per_bag * item.quantity), 0
-      ) + (transportationAmount || 0);
+        sum + (item.selectedSlab.price_per_bag * item.quantity), 0);
 
       // Generate payment hash and UPI link
       const paymentHash = generatePaymentHash();
@@ -36,7 +34,6 @@ export const useOrders = () => {
         upi_link: upiLink,
         scheduled_delivery: scheduledDelivery,
         transportation_required: transportationRequired || false,
-        transportation_amount: transportationAmount || 0,
         items: cartItems.map(item => ({
           product_id: item.product.id,
           quantity: item.quantity,

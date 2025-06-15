@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Search, Loader2, Navigation, X } from 'lucide-react';
+import { MapPin, Search, Loader2, Navigation, X, Store } from 'lucide-react';
 import { Address } from '../../types';
 import { OlaMaps } from 'olamaps-web-sdk';
+import ReactDOMServer from 'react-dom/server';
 
 interface LocationPickerProps {
   onLocationSelect: (address: Address) => void;
@@ -81,11 +82,47 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
     const map = olaMaps.init({
       container: mapRef.current,
       style: "https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json",
-      center: [78.35811839999997, 17.439204293719442],
-      zoom: 15,
+      center: [78.36299833770227, 17.47471239945692],
+      zoom: 14,
     });
 
-    await reverseGeoCode(17.439204293719442, 78.35811839999997);
+    const iconHtml = ReactDOMServer.renderToString(
+      <Store size={36} className="text-orange-600" />
+    );
+
+    const el = document.createElement('div');
+    el.innerHTML = iconHtml;
+    el.style.width = '36px';
+    el.style.height = '36px';
+    el.style.display = 'flex';
+    el.style.alignItems = 'center';
+    el.style.justifyContent = 'center';
+    el.style.cursor = 'pointer';
+
+    const marker = olaMaps
+      .addMarker({
+        element: el,
+        anchor: 'bottom',
+        draggable: false,
+      })
+      .setLngLat([
+        parseFloat(import.meta.env.VITE_STORE_LNG),
+        parseFloat(import.meta.env.VITE_STORE_LAT),
+      ])
+      .addTo(map);
+
+    // Optional: Add info popup
+    const popup = olaMaps.addPopup({ offset: 25 }).setHTML(`
+      <div class="text-sm">
+        <strong>Sri Vijaya Lakshmi Agency</strong><br />
+        New Hafeezpet, Marthanda Nagar, Hyderabad, Telangana - 500049<br />
+        Tamil Nadu 600001
+      </div>
+    `);
+
+    marker.setPopup(popup).togglePopup();;
+
+    await reverseGeoCode(17.47471239945692, 78.36299833770227);
 
     mapInstance.current = map;
 
@@ -103,6 +140,8 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
     map.on('moveend', async () => {
       const center = map.getCenter();
       const { lat, lng } = center;
+
+      console.log(lat, lng);
 
       await reverseGeoCode(lat, lng);
     });
@@ -195,7 +234,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
 
       {/* Fixed Center Marker */}
       <div className="absolute top-1/2 left-1/2 z-10 transform -translate-x-1/2 -translate-y-full pointer-events-none">
-      <MapPin className="h-14 w-14 text-secondary-500 drop-shadow-md fill-primary-800" />
+        <MapPin className="h-14 w-14 text-secondary-500 drop-shadow-md fill-primary-800" />
       </div>
 
       {/* Search Bar */}

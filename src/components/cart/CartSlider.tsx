@@ -1,7 +1,8 @@
 import React from 'react';
-import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
+import { X, ShoppingBag, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart';
+import CartOptions from '../ui/cartOptions';
 
 interface CartSliderProps {
   isOpen: boolean;
@@ -15,16 +16,15 @@ const CartSlider: React.FC<CartSliderProps> = ({ isOpen, onClose }) => {
     <>
       {/* Overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"
           onClick={onClose}
         />
       )}
 
       {/* Slider */}
-      <div className={`fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
-        isOpen ? 'translate-x-0' : 'translate-x-full'
-      }`}>
+      <div className={`fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}>
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-amber-50">
@@ -71,7 +71,7 @@ const CartSlider: React.FC<CartSliderProps> = ({ isOpen, onClose }) => {
                         alt={item.product.name}
                         className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
                       />
-                      
+
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-gray-800 text-sm truncate">
                           {item.product.name}
@@ -82,35 +82,12 @@ const CartSlider: React.FC<CartSliderProps> = ({ isOpen, onClose }) => {
                             {item.selectedSlab.label}
                           </span>
                         </div>
-                        
+
                         {/* Quantity Controls */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                              className="bg-white hover:bg-gray-100 text-gray-600 w-7 h-7 rounded-full flex items-center justify-center border border-gray-300 transition-colors"
-                            >
-                              <Minus size={12} />
-                            </button>
-                            <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
-                            <button
-                              onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                              className="bg-white hover:bg-gray-100 text-gray-600 w-7 h-7 rounded-full flex items-center justify-center border border-gray-300 transition-colors"
-                            >
-                              <Plus size={12} />
-                            </button>
-                          </div>
-                          
-                          <button
-                            onClick={() => removeFromCart(item.product.id)}
-                            className="text-red-500 hover:text-red-600 p-1 transition-colors"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
+                        <CartOptions item={item} updateQuantity={updateQuantity} removeFromCart={removeFromCart} />
                       </div>
                     </div>
-                    
+
                     <div className="mt-3 pt-3 border-t border-gray-200 flex justify-between items-center">
                       <span className="text-sm text-gray-600">
                         ₹{item.selectedSlab.price_per_bag}/bag
@@ -134,7 +111,7 @@ const CartSlider: React.FC<CartSliderProps> = ({ isOpen, onClose }) => {
                   ₹{getTotalAmount()}
                 </span>
               </div>
-              
+
               <div className="space-y-3">
                 <Link
                   to="/cart"
@@ -143,7 +120,7 @@ const CartSlider: React.FC<CartSliderProps> = ({ isOpen, onClose }) => {
                 >
                   View Cart
                 </Link>
-                
+
                 <Link
                   to="/checkout"
                   onClick={onClose}
@@ -153,10 +130,10 @@ const CartSlider: React.FC<CartSliderProps> = ({ isOpen, onClose }) => {
                   <ArrowRight size={18} />
                 </Link>
               </div>
-              
+
               <div className="mt-3 p-2 bg-green-50 rounded-lg">
                 <p className="text-xs text-green-700 text-center">
-                  🚚 Free delivery within 1 hour via Porter
+                  🚚 Dispatches within 1 hour via Porter
                 </p>
               </div>
             </div>

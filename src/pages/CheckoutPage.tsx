@@ -10,7 +10,7 @@ import SuggestedVehicleCard from '../components/SuggestedVehicleCard';
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
-  const { cartItems, getTotalAmount, clearCart } = useCart();
+  const { cartItems, getTotalAmount, clearCart, getTotalWeight } = useCart();
   const { createOrder, loading: orderLoading } = useOrders();
   const { validateCoupon, loading: couponLoading } = useCoupons();
 
@@ -60,7 +60,7 @@ const CheckoutPage: React.FC = () => {
       const queryParams = new URLSearchParams({
         to_address_lat: deliveryAddress.coordinates.lat,
         to_address_long: deliveryAddress.coordinates.lng,
-        weight: '700'
+        weight: getTotalWeight().toString()
       });
 
       const url = `${import.meta.env.VITE_PORTER_SERVER_URL}/fare-estimate?${queryParams}`;
@@ -91,10 +91,10 @@ const CheckoutPage: React.FC = () => {
         setSuggestedVehicle(null);
         setFetchVehicleLoading(false);
       }
-    }, 2000); // Delay: 2 seconds
+    }, 5000); // Delay: 2 seconds
 
     return () => clearTimeout(timeout); // Cancel timeout on address change
-  }, [deliveryAddress]);
+  }, [deliveryAddress, getTotalWeight()]);
 
 
   const validateForm = () => {
@@ -289,7 +289,7 @@ const CheckoutPage: React.FC = () => {
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
               <Truck size={20} className="mr-2" />
-              Transportation
+              Transportation via Porter
             </h2>
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
@@ -303,7 +303,7 @@ const CheckoutPage: React.FC = () => {
                 <label htmlFor="transportation" className="flex-1">
                   <div className="font-medium">Transportation Required</div>
                   <div className="text-sm text-gray-600">
-                    Select this option if you require a transportation service. Payment has to pay upon delivery. Your order will be dispatched within 1 hour.
+                    Select this option if you require a transportation service. Transportation Payment has to pay upon delivery. Your order will be dispatched within 1 hour.
                   </div>
                 </label>
               </div>
@@ -313,10 +313,19 @@ const CheckoutPage: React.FC = () => {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-2">
                   <Store size={16} className="text-blue-500" />
-                  <h4 className="font-semibold text-blue-800">Store Pickup Available</h4>
+                  <h4 className="font-semibold text-blue-800">Store Pickup Available
+                  </h4>
+                  <a
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${import.meta.env.VITE_STORE_LAT},${import.meta.env.VITE_STORE_LNG}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-primary-500 rounded-lg flex items-center text-white px-3 py-2 justify-center overflow-hidden hover:bg-primary-600 ">
+                        Get Directions
+                    </a>
                 </div>
                 <p className="text-sm text-blue-700">
-                  Visit our store at 123 Rice Market Street, Chennai.
+                New Hafeezpet, Marthanda Nagar,<br />
+                Hyderabad, Telangana - 500049
                   POS machine available - All cards accepted.
                 </p>
               </div>

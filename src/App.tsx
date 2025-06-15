@@ -14,53 +14,63 @@ import PreOrderPage from './pages/PreOrderPage';
 import TrackOrderPage from './pages/TrackOrderPage';
 import ContactPage from './pages/ContactPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import { DialogProvider } from './hooks/useDialog';
+import PrivacyPolicy from './pages/policies/PrivacyPolicy';
+import TermsOfService from './pages/policies/TermsOfService';
+import ShippingPolicy from './pages/policies/ShippingPolicy';
+import ScrollToTop from './components/ui/ScrollToTop';
 
 function App() {
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        <AnnouncementBar />
-        <Header />
-        <main className="flex-grow">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/products" element={<ProductsPage />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/order/:id" element={<OrderPage />} />
-            <Route path="/preorder" element={<PreOrderPage />} />
-            <Route path="/orders" element={<TrackOrderPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/policies" element={<div className="container mx-auto px-4 py-12 text-center"><h2 className="text-2xl font-bold">Policies Page - Coming Soon</h2></div>} />
-          </Routes>
-        </main>
-        <Footer />
-        
-        {/* Toast Container */}
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-            success: {
+    <DialogProvider>
+      <Router>
+      <ScrollToTop />
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+          <AnnouncementBar />
+          <Header />
+          <main className="flex-grow">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/products" element={<ProductsPage />} />
+              <Route path="/product/:id" element={<ProductDetail />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path="/order/:id" element={<OrderPage />} />
+              <Route path="/preorder" element={<PreOrderPage />} />
+              <Route path="/orders" element={<TrackOrderPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-of-service" element={<TermsOfService />} />
+              <Route path="/shipping-policy" element={<ShippingPolicy />} />
+            </Routes>
+          </main>
+          <Footer />
+
+          {/* Toast Container */}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 10000,
               style: {
-                background: '#10B981',
+                background: '#363636',
+                color: '#fff',
               },
-            },
-            error: {
-              style: {
-                background: '#EF4444',
+              success: {
+                style: {
+                  background: '#10B981',
+                },
               },
-            },
-          }}
-        />
-      </div>
-    </Router>
+              error: {
+                style: {
+                  background: '#EF4444',
+                },
+              },
+            }}
+          />
+        </div>
+      </Router>
+    </DialogProvider>
   );
 }
 

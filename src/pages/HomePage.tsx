@@ -7,7 +7,7 @@ const HomePage: React.FC = () => {
   const features = [
     {
       icon: Clock,
-      title: '1 Hour Delivery',
+      title: '1 Hour Dispatch',
       description: 'Lightning fast delivery for instant orders'
     },
     {
@@ -41,7 +41,7 @@ const HomePage: React.FC = () => {
             <h2 className="text-3xl font-bold text-gray-800 mb-4">Why Choose Us?</h2>
             <p className="text-gray-600">Experience the best in rice delivery service</p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => (
               <div
@@ -66,20 +66,21 @@ const HomePage: React.FC = () => {
       <section className="py-12 bg-gradient-to-r from-orange-500 to-amber-500">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
-            Need Help Choosing the Right Rice?
+            Looking to Buy Rice for Your Business?
           </h2>
           <p className="text-white text-lg mb-8 opacity-90">
-            Our experts are here to help you select the perfect rice for your needs
+            Get expert assistance in choosing the right rice variety and pricing for your wholesale or retail needs.
           </p>
           <a
-            href="https://wa.me/+919876543210?text=Hi! I need help choosing the right rice for my needs."
+            href="https://wa.me/+918374237713?text=Hi! I'm interested in buying rice for my business. Please assist."
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center space-x-2 bg-white text-orange-500 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors transform hover:scale-105"
           >
             <MessageCircle size={20} />
-            <span>Chat with Expert</span>
+            <span>Talk to Sales</span>
           </a>
+
         </div>
       </section>
     </div>

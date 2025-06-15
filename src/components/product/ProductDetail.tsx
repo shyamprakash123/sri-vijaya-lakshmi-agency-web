@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ShoppingCart, MessageCircle, Package, Truck, Shield, Loader2, AlertCircle, Store, MapPin, CreditCard } from 'lucide-react';
 import { useProduct } from '../../hooks/useProducts';
 import { useCart } from '../../hooks/useCart';
 import { PriceSlab } from '../../types';
 import toast from 'react-hot-toast';
+import QuantityInput from '../ui/QuntityInput';
+import { OlaMaps } from 'olamaps-web-sdk';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +15,8 @@ const ProductDetail: React.FC = () => {
   const [selectedSlab, setSelectedSlab] = useState<PriceSlab | null>(null);
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
+
+  const imageUrl = `https://api.olamaps.io/tiles/v1/styles/default-light-standard/static/78.356371,17.475702,15/800x600.png?marker=78.356371,17.475702|red|scale:1&api_key=${import.meta.env.VITE_OLA_MAPS_API_KEY || 'demo-key'}`;
 
   useEffect(() => {
     if (product && product.price_slabs && product.price_slabs.length > 0) {
@@ -23,8 +27,8 @@ const ProductDetail: React.FC = () => {
   useEffect(() => {
     if (product && product.price_slabs && selectedSlab) {
       // Update selected slab based on quantity
-      const newSlab = product.price_slabs.find(slab => 
-        quantity >= slab.min_quantity && 
+      const newSlab = product.price_slabs.find(slab =>
+        quantity >= slab.min_quantity &&
         (slab.max_quantity === null || quantity <= slab.max_quantity)
       );
       if (newSlab && newSlab !== selectedSlab) {
@@ -49,7 +53,7 @@ const ProductDetail: React.FC = () => {
   const getWhatsAppLink = () => {
     if (!product) return '';
     const message = `Hi! I want to order ${quantity} bags of ${product.name} (${product.weight}). Total: ₹${(selectedSlab?.price_per_bag || 0) * quantity}`;
-    const phoneNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '+919876543210';
+    const phoneNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '+918374237713';
     return `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
   };
 
@@ -96,11 +100,10 @@ const ProductDetail: React.FC = () => {
             />
             {/* Stock Status Badge */}
             <div className="absolute top-4 right-4">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                isInStock 
-                  ? 'bg-green-500 text-white' 
-                  : 'bg-red-500 text-white'
-              }`}>
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${isInStock
+                ? 'bg-green-500 text-white'
+                : 'bg-red-500 text-white'
+                }`}>
                 {isInStock ? 'In Stock' : 'Out of Stock'}
               </span>
             </div>
@@ -142,11 +145,10 @@ const ProductDetail: React.FC = () => {
                 {product.price_slabs.map((slab, index) => (
                   <div
                     key={index}
-                    className={`p-3 rounded-lg border-2 cursor-pointer transition-colors ${
-                      selectedSlab?.id === slab.id
-                        ? 'border-orange-500 bg-orange-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                    className={`p-3 rounded-lg border-2 cursor-pointer transition-colors ${selectedSlab?.id === slab.id
+                      ? 'border-orange-500 bg-orange-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                      }`}
                     onClick={() => setSelectedSlab(slab)}
                   >
                     <div className="flex justify-between items-center">
@@ -162,36 +164,7 @@ const ProductDetail: React.FC = () => {
           )}
 
           {/* Quantity Selector */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Quantity (bags)
-            </label>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 w-10 h-10 rounded-lg font-semibold"
-                disabled={!isInStock}
-              >
-                -
-              </button>
-              <input
-                type="number"
-                value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-20 text-center py-2 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                min="1"
-                max={product.available_quantity}
-                disabled={!isInStock}
-              />
-              <button
-                onClick={() => setQuantity(Math.min(product.available_quantity, quantity + 1))}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 w-10 h-10 rounded-lg font-semibold"
-                disabled={!isInStock}
-              >
-                +
-              </button>
-            </div>
-          </div>
+          <QuantityInput product={product} quantity={quantity} setQuantity={setQuantity} isInStock={isInStock} />
 
           {/* Total Price */}
           {selectedSlab && (
@@ -222,7 +195,7 @@ const ProductDetail: React.FC = () => {
                 <ShoppingCart size={20} />
                 <span>Add to Cart</span>
               </button>
-              
+
               <button
                 onClick={handleBuyNow}
                 disabled={!selectedSlab || !isInStock}
@@ -232,7 +205,7 @@ const ProductDetail: React.FC = () => {
                 <span>Buy Now</span>
               </button>
             </div>
-            
+
             <a
               href={getWhatsAppLink()}
               target="_blank"
@@ -253,14 +226,14 @@ const ProductDetail: React.FC = () => {
             <div className="space-y-2 text-sm text-blue-700">
               <div className="flex items-center space-x-2">
                 <MapPin size={16} />
-                <span>123 Rice Market Street, Chennai, Tamil Nadu 600001</span>
+                <span>New Hafeezpet, Marthanda Nagar,<br />
+                  Hyderabad, Telangana - 500049</span>
               </div>
               <div className="flex items-center space-x-2">
                 <CreditCard size={16} />
                 <span>POS machine available - All cards accepted</span>
               </div>
               <p>📍 Physical store open for walk-in customers</p>
-              <p>🚗 Free parking available</p>
             </div>
           </div>
 
@@ -271,7 +244,7 @@ const ProductDetail: React.FC = () => {
               <h4 className="font-semibold text-green-800">Delivery Information</h4>
             </div>
             <p className="text-sm text-green-700">
-              📦 Delivery handled by Porter within 1 hour for instant orders, 
+              📦 Delivery handled by Porter within 1 hour for instant orders,
               and as per selected slot for pre-orders.
             </p>
           </div>
@@ -285,18 +258,24 @@ const ProductDetail: React.FC = () => {
             <MapPin size={24} className="mr-2 text-orange-500" />
             Store Location
           </h3>
-          
+
           {/* Map Placeholder - Replace with actual map integration */}
-          <div className="bg-gray-200 rounded-lg h-64 flex items-center justify-center mb-4">
-            <div className="text-center">
-              <MapPin size={48} className="text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-500 font-medium">Sri Vijaya Lakshmi Agency</p>
-              <p className="text-sm text-gray-400">123 Rice Market Street, Chennai</p>
-              <p className="text-sm text-gray-400">Tamil Nadu 600001</p>
-            </div>
+          <a
+            href={`https://www.google.com/maps/dir/?api=1&destination=${import.meta.env.VITE_STORE_LAT},${import.meta.env.VITE_STORE_LNG}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-gray-200 rounded-lg h-64 flex items-center justify-center mb-4 overflow-hidden">
+            <img src={imageUrl} alt="Static Map" className="object-cover w-full h-full " />
+          </a>
+          <div className="text-center">
+            <MapPin size={48} className="text-gray-400 mx-auto mb-2" />
+            <p className="text-gray-500 font-medium">Sri Vijaya Lakshmi Agency</p>
+            <p className="text-sm text-gray-400">New Hafeezpet, Marthanda Nagar,<br />
+              Hyderabad, Telangana - 500049</p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center mt-6">
             <div className="p-4 bg-orange-50 rounded-lg">
               <h4 className="font-semibold text-orange-800 mb-2">Store Hours</h4>
               <p className="text-sm text-orange-700">Mon - Sat: 6:00 AM - 10:00 PM</p>
@@ -304,12 +283,11 @@ const ProductDetail: React.FC = () => {
             </div>
             <div className="p-4 bg-blue-50 rounded-lg">
               <h4 className="font-semibold text-blue-800 mb-2">Contact</h4>
-              <p className="text-sm text-blue-700">📞 +91 98765 43210</p>
-              <p className="text-sm text-blue-700">📧 info@svlrice.com</p>
+              <p className="text-sm text-blue-700">📞 +91 8374237713</p>
+              <p className="text-sm text-blue-700">📧 contact@vijayalakshmirice.in</p>
             </div>
             <div className="p-4 bg-green-50 rounded-lg">
               <h4 className="font-semibold text-green-800 mb-2">Facilities</h4>
-              <p className="text-sm text-green-700">🚗 Free Parking</p>
               <p className="text-sm text-green-700">💳 Card Payments</p>
             </div>
           </div>
