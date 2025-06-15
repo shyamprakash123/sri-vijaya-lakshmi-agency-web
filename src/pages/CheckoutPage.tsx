@@ -167,8 +167,8 @@ const CheckoutPage: React.FC = () => {
       );
 
       const orderInfo = {
-        orderId: order.id,
-        userMeta: user?.user_metadata,
+        order_id: order.id,
+        user_id: user?.id,
         amount: order.total_amount,
       };
 
