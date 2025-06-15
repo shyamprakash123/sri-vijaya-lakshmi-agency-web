@@ -3,6 +3,9 @@ import { Search, Package, Clock, CheckCircle, Truck, MapPin, Phone, Mail, Loader
 import { useAuth } from '../hooks/useAuth';
 import { orderService } from '../lib/supabase';
 import { Order } from '../types';
+import PayNowSection from '../components/ui/PayNowSection';
+import { generateUpiLink } from '../lib/UPILinkGenerator';
+import { encryptOrderInfo } from '../lib/EncryptToken';
 
 const TrackOrderPage: React.FC = () => {
   const [orderId, setOrderId] = useState('');
@@ -11,7 +14,7 @@ const TrackOrderPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [loadingUserOrders, setLoadingUserOrders] = useState(false);
-  
+
   const { user } = useAuth();
 
   useEffect(() => {
@@ -22,7 +25,7 @@ const TrackOrderPage: React.FC = () => {
 
   const fetchUserOrders = async () => {
     if (!user) return;
-    
+
     setLoadingUserOrders(true);
     try {
       const orders = await orderService.getUserOrders(user.id);
@@ -139,7 +142,7 @@ const TrackOrderPage: React.FC = () => {
                 <span className="hidden sm:inline">{loading ? 'Searching...' : 'Track'}</span>
               </button>
             </div>
-            
+
             {error && (
               <p className="text-red-500 text-sm mt-3">{error}</p>
             )}
@@ -229,7 +232,23 @@ const TrackOrderPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+               
               </div>
+              {orderData.order_status === "pending" &&
+                  <PayNowSection
+                    upiUrl={generateUpiLink({
+                      payeeVPA: import.meta.env.VITE_UPI_ID,
+                      payeeName: 'Sri Vijaya Lakshmi',
+                      amount: orderData.total_amount,
+                      transactionNote: encryptOrderInfo({
+                        order_id: orderData.id,
+                        user_id: user?.id,
+                        amount: orderData.total_amount,
+                      })
+                    })}
+                  />
+                }
             </div>
           </div>
         )}
