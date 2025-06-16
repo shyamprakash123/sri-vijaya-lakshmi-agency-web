@@ -13,6 +13,7 @@ import { generateUpiLink } from '../lib/UPILinkGenerator';
 import PayNowSectionCheckout from '../components/ui/PayNowSectionCheckout';
 import toast from 'react-hot-toast';
 import { Toaster } from 'react-hot-toast';
+import { supabase } from '../lib/supabase';
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -44,22 +45,43 @@ const CheckoutPage: React.FC = () => {
   const subtotal = getTotalAmount();
   const finalAmount = subtotal - discount;
 
-  // Check stock availability for all cart items
-  const checkStockAvailability = () => {
+  const checkStockAvailability = async () => {
     const errors: string[] = [];
 
+    // Extract product IDs from cart
+    const productIds = cartItems.map(item => item.product.id);
+
+    // Fetch latest product stock from DB
+    const { data: products, error } = await supabase
+      .from('products')
+      .select('id, name, available_quantity')
+      .in('id', productIds);
+
+    if (error) {
+      console.error('Error fetching stock:', error.message);
+      setStockErrors(['Failed to verify stock availability. Please try again.']);
+      return false;
+    }
+
+    // Compare each item in cart with DB stock
     cartItems.forEach(item => {
-      if (item.quantity > item.product.available_quantity) {
-        errors.push(`${item.product.name}: Only ${item.product.available_quantity} bags available (you have ${item.quantity} in cart)`);
+      const dbProduct = products?.find(p => p.id === item.product.id);
+      if (!dbProduct) {
+        errors.push(`${item.product.name}: Product not found`);
+        return;
       }
-      if (item.product.available_quantity === 0) {
+
+      if (dbProduct.available_quantity === 0) {
         errors.push(`${item.product.name}: Out of stock`);
+      } else if (item.quantity > dbProduct.available_quantity) {
+        errors.push(`${item.product.name}: Only ${dbProduct.available_quantity} bags available (you have ${item.quantity} in cart)`);
       }
     });
 
     setStockErrors(errors);
     return errors.length === 0;
   };
+
 
   useEffect(() => {
     if (!deliveryAddress?.coordinates?.lat || !deliveryAddress?.coordinates?.lng) return;
@@ -165,7 +187,9 @@ const CheckoutPage: React.FC = () => {
     if (gstNumber !== "" && !validateGst(gstNumber)) {
       return;
     }
-    if (!checkStockAvailability()) {
+
+    const isStockOk = await checkStockAvailability();
+    if (!isStockOk) {
       setErrors(prev => ({ ...prev, stock: 'Please resolve stock issues before proceeding' }));
       return;
     }
@@ -175,7 +199,7 @@ const CheckoutPage: React.FC = () => {
     // return;
 
     try {
-      const {status, value} = await createOrder(
+      const { status, value } = await createOrder(
         cartItems,
         deliveryAddress,
         orderType,
@@ -186,7 +210,7 @@ const CheckoutPage: React.FC = () => {
         discount
       );
 
-      if(status === 'failed'){
+      if (status === 'failed') {
         toast.error("Order cannot be created. Stock is not available or Please complete payment or cancel your existing order.");
         return;
       }
