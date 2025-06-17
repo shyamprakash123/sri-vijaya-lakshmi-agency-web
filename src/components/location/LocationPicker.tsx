@@ -19,10 +19,10 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
-  const [manualAddress, setManualAddress] = useState<Address>(
-    initialAddress || { fullAddress: '', pincode: '', landmark: '' }
-  );
+  const [userName, setUserName] = useState<string>("");
+  const [phoneNumber, setPhoneNumber] = useState<string | number | undefined>("")
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   const mapRef = useRef<HTMLDivElement>(null);
@@ -45,7 +45,9 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
         const data = await response.json();
         const address = data.results[0];
         if (address) {
-          const locationData = {
+          const locationData: Address = {
+            fullName: userName,
+            phoneNumber: phoneNumber,
             fullAddress: address.formatted_address,
             pincode: extractPincode(address.formatted_address),
             landmark: '',
@@ -147,6 +149,14 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
     initMap();
   }, []);
 
+  useEffect(() => {
+    const locationData: Address = {
+      fullName: userName,
+      phoneNumber: phoneNumber,
+    };
+    onLocationSelect(locationData);
+  }, [userName, phoneNumber]);
+
   const searchLocations = async (query: string) => {
     if (!query.trim()) return setSuggestions([]);
     try {
@@ -170,7 +180,9 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
     try {
       setLoading(true);
       const coords = suggestion?.geometry?.location || { lat: 17.439204293719442, lng: 78.35811839999997 };
-      const locationData = {
+      const locationData: Address = {
+        fullName: userName,
+        phoneNumber: phoneNumber,
         fullAddress: suggestion.description,
         pincode: extractPincode(suggestion.description),
         landmark: '',
@@ -225,63 +237,106 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
   };
 
   return (
-    <div className="relative w-full h-[500px]">
-      <div ref={mapRef} className="w-full h-full rounded-lg" />
-
-      {/* Fixed Center Marker */}
-      <div className="absolute top-1/2 left-1/2 z-10 transform -translate-x-1/2 -translate-y-full pointer-events-none">
-        <MapPin className="h-14 w-14 text-secondary-500 drop-shadow-md fill-primary-800" />
-      </div>
-
-      {/* Search Bar */}
-      <div className="absolute top-12 md:top-4 left-1/2 transform -translate-x-1/2 bg-white rounded shadow-md w-[90%] max-w-md flex items-center p-2 z-20">
-        <Search className="mr-2 text-gray-500" />
-        <input
-          className="w-full outline-none"
-          type="text"
-          value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            searchLocations(e.target.value);
-          }}
-          placeholder="Search a place..."
-        />
-        {searchQuery && (
-          <X
-            className="ml-2 cursor-pointer text-gray-500"
-            onClick={() => {
-              setSearchQuery('');
-              setSuggestions([]);
-            }}
+    <div className="w-full flex flex-col md:flex-row gap-6">
+      {/* Left Panel: Form Inputs */}
+      <div className="w-full md:w-[400px] space-y-6 bg-white p-6 rounded-lg shadow-md z-30">
+        {/* Name Input */}
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+            Full Name
+          </label>
+          <input
+            id="name"
+            type="text"
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
+            className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+            placeholder="Enter your full name"
+            required
           />
+        </div>
+
+        {/* Phone Input */}
+        <div>
+          <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+            Phone Number
+          </label>
+          <input
+            id="phone"
+            type="tel"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+            placeholder="Enter your phone number"
+            required
+          />
+        </div>
+
+        {/* Selected Address */}
+        {selectedLocation && (
+          <div className="bg-white rounded shadow-md p-4 text-sm z-20">
+            <div className="font-semibold">Delivery Address</div>
+            <div>{selectedLocation.fullAddress}</div>
+            <div className="text-xs text-gray-500">Pincode: {selectedLocation.pincode}</div>
+          </div>
         )}
       </div>
 
-      {/* Suggestions Dropdown */}
-      {suggestions.length > 0 && (
-        <div className="absolute top-24 md:top-16 left-1/2 transform -translate-x-1/2 bg-white shadow-lg rounded w-[90%] max-w-md z-30">
-          {suggestions.map((sugg, idx) => (
-            <div
-              key={idx}
-              className="p-2 border-b cursor-pointer hover:bg-gray-100"
-              onClick={() => selectSuggestion(sugg)}
-            >
-              {sugg.description}
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Right Panel: Map */}
+      <div className="relative w-full h-[400px] md:h-[500px] rounded-lg overflow-hidden">
 
-      {/* Selected Address */}
-      {selectedLocation && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white rounded shadow-md p-4 w-[90%] max-w-md text-sm z-20">
-          <div className="font-semibold">Delivery Address</div>
-          <div>{selectedLocation.fullAddress}</div>
-          <div className="text-xs text-gray-500">Pincode: {selectedLocation.pincode}</div>
+        {/* Map Element */}
+        <div ref={mapRef} className="absolute inset-0 w-full h-full z-0" />
+
+        {/* Fixed Center Marker */}
+        <div className="absolute top-1/2 left-1/2 z-10 transform -translate-x-1/2 -translate-y-full pointer-events-none">
+          <MapPin className="h-14 w-14 text-secondary-500 drop-shadow-md fill-primary-800" />
         </div>
-      )}
+
+        {/* Search Bar */}
+        <div className="absolute top-12 md:top-4 left-1/2 transform -translate-x-1/2 bg-white rounded shadow-md w-[90%] max-w-md flex items-center p-2 z-20">
+          <Search className="mr-2 text-gray-500" />
+          <input
+            className="w-full outline-none"
+            type="text"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              searchLocations(e.target.value);
+            }}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder="Search a place..."
+          />
+          {searchQuery && (
+            <X
+              className="ml-2 cursor-pointer text-gray-500"
+              onClick={() => {
+                setSearchQuery('');
+                setSuggestions([]);
+              }}
+            />
+          )}
+        </div>
+
+        {/* Suggestions Dropdown */}
+        {suggestions.length > 0 && isFocused && (
+          <div className="absolute top-24 md:top-16 left-1/2 transform -translate-x-1/2 bg-white shadow-lg rounded w-[90%] max-w-md z-30 max-h-[200px] overflow-auto">
+            {suggestions.map((sugg, idx) => (
+              <div
+                key={idx}
+                className="p-2 border-b cursor-pointer hover:bg-gray-100"
+                onClick={() => selectSuggestion(sugg)}
+              >
+                {sugg.description}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
+
 };
 
 export default LocationPicker;

@@ -48,6 +48,14 @@ export interface Order {
   transportation_required?: boolean;
   transportation_amount?: number;
   order_items?: OrderItem[];
+  transaction?: TransactionDetails;
+}
+
+export interface TransactionDetails {
+  id: string;
+  transaction_utr: string;
+  amount: number;
+  processed_at: string;
 }
 
 export interface OrderItem {
@@ -61,6 +69,8 @@ export interface OrderItem {
 }
 
 export interface Address {
+  fullName: string;
+  phoneNumber: string | number | undefined;
   fullAddress: string;
   pincode: string;
   landmark?: string;

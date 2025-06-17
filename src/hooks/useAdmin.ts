@@ -143,6 +143,16 @@ export const useAdmin = () => {
     }
   };
 
+  const updatePaymentStatus = async (orderId: string, status: string) => {
+    try {
+      await orderService.updatePaymentStatus(orderId, status);
+      await fetchAdminData(); // Refresh data
+    } catch (err) {
+      console.error('Update payment status error:', err);
+      throw new Error(err instanceof Error ? err.message : 'Failed to update payment status');
+    }
+  };
+
   const updateProductStock = async (productId: string, quantity: number) => {
     try {
       await productService.updateQuantity(productId, quantity);
@@ -314,6 +324,7 @@ export const useAdmin = () => {
     loading,
     error,
     updateOrderStatus,
+    updatePaymentStatus,
     updateProductStock,
     createProduct,
     updateProduct,

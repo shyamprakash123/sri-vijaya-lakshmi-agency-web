@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  Package, 
-  ShoppingCart, 
-  Users, 
-  DollarSign, 
-  TrendingUp, 
+import {
+  Package,
+  ShoppingCart,
+  Users,
+  DollarSign,
+  TrendingUp,
   TrendingDown,
   Plus,
   Edit,
@@ -42,6 +42,7 @@ const AdminDashboard: React.FC = () => {
     loading,
     error,
     updateOrderStatus,
+    updatePaymentStatus,
     updateProductStock,
     createProduct,
     updateProduct,
@@ -64,7 +65,7 @@ const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  
+
   // Modal states
   const [productModal, setProductModal] = useState({ isOpen: false, product: null });
   const [bannerModal, setBannerModal] = useState({ isOpen: false, banner: null });
@@ -215,9 +216,7 @@ const AdminDashboard: React.FC = () => {
           >
             <option value="all">All Orders</option>
             <option value="pending">Pending</option>
-            <option value="prepaid">Prepaid</option>
             <option value="preparing">Preparing</option>
-            <option value="fully_paid">Fully Paid</option>
             <option value="dispatched">Dispatched</option>
             <option value="delivered">Delivered</option>
             <option value="canceled">Canceled</option>
@@ -243,7 +242,10 @@ const AdminDashboard: React.FC = () => {
                   Coupon
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  Payment Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Order Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Type
@@ -263,92 +265,95 @@ const AdminDashboard: React.FC = () => {
               {orders
                 .filter(order => selectedStatus === 'all' || order.order_status === selectedStatus)
                 .map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    #{order.id.slice(0, 8)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {order.user_id ? 'Registered User' : 'Guest'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <div>
-                      <div className="font-semibold">₹{order.total_amount.toLocaleString()}</div>
-                      {order.subtotal_amount && order.subtotal_amount !== order.total_amount && (
-                        <div className="text-xs text-gray-500">
-                          Subtotal: ₹{order.subtotal_amount.toLocaleString()}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {order.coupon_code ? (
-                      <div className="flex items-center space-x-1">
-                        <Tag size={12} className="text-green-500" />
-                        <span className="text-green-600 font-medium">{order.coupon_code}</span>
-                        <span className="text-green-600">(-₹{order.coupon_discount})</span>
-                      </div>
-                    ) : (
-                      <span className="text-gray-400">No coupon</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      order.order_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                      order.order_status === 'delivered' ? 'bg-green-100 text-green-800' :
-                      'bg-blue-100 text-blue-800'
-                    }`}>
-                      {order.order_status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                
-                      order.order_type === 'preorder' ? 'bg-purple-100 text-purple-800' : 'bg-orange-100 text-orange-800'
-                    }`}>
-                      {order.order_type}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {order.transportation_required ? (
-                      <span className="text-green-600 font-medium">₹{order.transportation_amount}</span>
-                    ) : (
-                      <span className="text-gray-400">No</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(order.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => setOrderDetailsModal({ isOpen: true, order })}
-                        className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors"
-                        title="View Details"
-                      >
-                        <Eye size={16} />
-                      </button>
-                      <select
-                        value={order.order_status}
-                        onChange={(e) => handleAction(
-                          () => updateOrderStatus(order.id, e.target.value),
-                          'Order status updated successfully'
+                  <tr key={order.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      #{order.id.slice(0, 8)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {order.user_id ? 'Registered User' : 'Guest'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <div>
+                        <div className="font-semibold">₹{order.total_amount.toLocaleString()}</div>
+                        {order.subtotal_amount && order.subtotal_amount !== order.total_amount && (
+                          <div className="text-xs text-gray-500">
+                            Subtotal: ₹{order.subtotal_amount.toLocaleString()}
+                          </div>
                         )}
-                        className="text-sm border border-gray-300 rounded px-2 py-1 min-w-[120px]"
-                        disabled={actionLoading}
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="prepaid">Prepaid</option>
-                        <option value="fully_paid">Fully Paid</option>
-                        <option value="preparing">Preparing</option>
-                        <option value="dispatched">Dispatched</option>
-                        <option value="delivered">Delivered</option>
-                        <option value="canceled">Canceled</option>
-            
-                      </select>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {order.coupon_code ? (
+                        <div className="flex items-center space-x-1">
+                          <Tag size={12} className="text-green-500" />
+                          <span className="text-green-600 font-medium">{order.coupon_code}</span>
+                          <span className="text-green-600">(-₹{order.coupon_discount})</span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">No coupon</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${order.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        order.payment_status === 'completed' ? 'bg-green-100 text-green-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                        {order.payment_status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${order.order_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        order.order_status === 'delivered' ? 'bg-green-100 text-green-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                        {order.order_status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${order.order_type === 'preorder' ? 'bg-purple-100 text-purple-800' : 'bg-orange-100 text-orange-800'
+                        }`}>
+                        {order.order_type}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {order.transportation_required ? (
+                        <span className="text-green-600 font-medium">₹{order.transportation_amount}</span>
+                      ) : (
+                        <span className="text-gray-400">No</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => setOrderDetailsModal({ isOpen: true, order })}
+                          className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors"
+                          title="View Details"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <select
+                          value={order.order_status}
+                          onChange={(e) => handleAction(
+                            () => updateOrderStatus(order.id, e.target.value),
+                            'Order status updated successfully'
+                          )}
+                          className="text-sm border border-gray-300 rounded px-2 py-1 min-w-[120px]"
+                          disabled={actionLoading}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="preparing">Preparing</option>
+                          <option value="dispatched">Dispatched</option>
+                          <option value="delivered">Delivered</option>
+                          <option value="canceled">Canceled</option>
+
+                        </select>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
@@ -425,9 +430,8 @@ const AdminDashboard: React.FC = () => {
                     />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      product.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${product.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
                       {product.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
@@ -484,17 +488,16 @@ const AdminDashboard: React.FC = () => {
                   <p className="text-sm text-gray-500">/{category.slug}</p>
                 </div>
               </div>
-              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                category.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-              }`}>
+              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${category.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}>
                 {category.is_active ? 'Active' : 'Inactive'}
               </span>
             </div>
-            
+
             {category.description && (
               <p className="text-gray-600 text-sm mb-4">{category.description}</p>
             )}
-            
+
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-500">Order: {category.sort_order}</span>
               <div className="flex space-x-2">
@@ -542,9 +545,8 @@ const AdminDashboard: React.FC = () => {
             <div className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold text-gray-800">{banner.title}</h3>
-                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                  banner.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${banner.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
                   {banner.is_active ? 'Active' : 'Inactive'}
                 </span>
               </div>
@@ -598,17 +600,15 @@ const AdminDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <div className="flex items-center space-x-3 mb-2">
-                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                    announcement.type === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${announcement.type === 'warning' ? 'bg-yellow-100 text-yellow-800' :
                     announcement.type === 'success' ? 'bg-green-100 text-green-800' :
-                    announcement.type === 'promotion' ? 'bg-purple-100 text-purple-800' :
-                    'bg-blue-100 text-blue-800'
-                  }`}>
+                      announcement.type === 'promotion' ? 'bg-purple-100 text-purple-800' :
+                        'bg-blue-100 text-blue-800'
+                    }`}>
                     {announcement.type}
                   </span>
-                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                    announcement.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
+                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${announcement.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
                     {announcement.is_active ? 'Active' : 'Inactive'}
                   </span>
                   <span className="text-sm text-gray-500">Priority: {announcement.priority}</span>
@@ -660,13 +660,12 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1 rounded-lg">
                 <span className="font-bold">{coupon.code}</span>
               </div>
-              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                coupon.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-              }`}>
+              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${coupon.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}>
                 {coupon.is_active ? 'Active' : 'Inactive'}
               </span>
             </div>
-            
+
             <div className="space-y-2 text-sm">
               <p><strong>Type:</strong> {coupon.discount_type}</p>
               <p><strong>Value:</strong> {coupon.discount_type === 'percentage' ? `${coupon.discount_value}%` : `₹${coupon.discount_value}`}</p>
@@ -682,7 +681,7 @@ const AdminDashboard: React.FC = () => {
               )}
               <p><strong>Valid Until:</strong> {new Date(coupon.valid_until).toLocaleDateString()}</p>
             </div>
-            
+
             <div className="flex items-center justify-end space-x-2 mt-4">
               <button
                 onClick={() => setCouponModal({ isOpen: true, coupon })}
@@ -750,11 +749,10 @@ const AdminDashboard: React.FC = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-                    activeTab === tab.id
-                      ? 'border-orange-500 text-orange-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
+                  className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${activeTab === tab.id
+                    ? 'border-orange-500 text-orange-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
                 >
                   <tab.icon size={16} />
                   <span>{tab.label}</span>
@@ -780,7 +778,7 @@ const AdminDashboard: React.FC = () => {
       <ProductModal
         isOpen={productModal.isOpen}
         onClose={() => setProductModal({ isOpen: false, product: null })}
-        onSave={productModal.product ? 
+        onSave={productModal.product ?
           (data) => handleAction(
             () => updateProduct(productModal.product.id, data),
             'Product updated successfully'
@@ -797,7 +795,7 @@ const AdminDashboard: React.FC = () => {
       <BannerModal
         isOpen={bannerModal.isOpen}
         onClose={() => setBannerModal({ isOpen: false, banner: null })}
-        onSave={bannerModal.banner ? 
+        onSave={bannerModal.banner ?
           (data) => handleAction(
             () => updateBanner(bannerModal.banner.id, data),
             'Banner updated successfully'
@@ -814,7 +812,7 @@ const AdminDashboard: React.FC = () => {
       <AnnouncementModal
         isOpen={announcementModal.isOpen}
         onClose={() => setAnnouncementModal({ isOpen: false, announcement: null })}
-        onSave={announcementModal.announcement ? 
+        onSave={announcementModal.announcement ?
           (data) => handleAction(
             () => updateAnnouncement(announcementModal.announcement.id, data),
             'Announcement updated successfully'
@@ -831,7 +829,7 @@ const AdminDashboard: React.FC = () => {
       <CouponModal
         isOpen={couponModal.isOpen}
         onClose={() => setCouponModal({ isOpen: false, coupon: null })}
-        onSave={couponModal.coupon ? 
+        onSave={couponModal.coupon ?
           (data) => handleAction(
             () => updateCoupon(couponModal.coupon.id, data),
             'Coupon updated successfully'
@@ -848,7 +846,7 @@ const AdminDashboard: React.FC = () => {
       <CategoryModal
         isOpen={categoryModal.isOpen}
         onClose={() => setCategoryModal({ isOpen: false, category: null })}
-        onSave={categoryModal.category ? 
+        onSave={categoryModal.category ?
           (data) => handleAction(
             () => updateCategory(categoryModal.category.id, data),
             'Category updated successfully'
@@ -864,6 +862,19 @@ const AdminDashboard: React.FC = () => {
 
       <OrderDetailsModal
         isOpen={orderDetailsModal.isOpen}
+        onChangePaymentStatus={(order_id, status) => handleAction(async () => {
+          await updatePaymentStatus(order_id, status);
+          setOrderDetailsModal((prev) => {
+            return {
+              ...prev,
+              order: {
+                ...prev.order,
+                payment_status: status,
+              },
+            };
+          });
+
+        }, "Payment Status updated successfully")}
         onClose={() => setOrderDetailsModal({ isOpen: false, order: null })}
         order={orderDetailsModal.order}
       />

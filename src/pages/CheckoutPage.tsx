@@ -22,6 +22,8 @@ const CheckoutPage: React.FC = () => {
   const { validateCoupon, loading: couponLoading } = useCoupons();
 
   const [deliveryAddress, setDeliveryAddress] = useState<Address>({
+    fullName: '',
+    phoneNumber: '',
     fullAddress: '',
     pincode: '',
     landmark: ''
@@ -142,6 +144,17 @@ const CheckoutPage: React.FC = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
+    console.log(deliveryAddress)
+    if (!deliveryAddress.fullName.trim()) {
+      newErrors.fullName = 'Full Name is required';
+    }
+
+    if (!deliveryAddress.phoneNumber?.trim()) {
+      newErrors.phoneNumber = 'Phone Number is required';
+    } else if (!/^[6-9]\d{9}$/.test(deliveryAddress.phoneNumber)) {
+      newErrors.phoneNumber = 'Enter a valid 10-digit phone number';
+    }
+
     if (!deliveryAddress.fullAddress.trim()) {
       newErrors.address = 'Delivery address is required';
     }
@@ -211,7 +224,7 @@ const CheckoutPage: React.FC = () => {
       );
 
       if (status === 'failed') {
-        toast.error("Order cannot be created. Stock is not available or Please complete payment or cancel your existing order.");
+        toast.error(value ? value : "Order cannot be created. Stock is not available or Please complete payment or cancel your existing order.");
         return;
       }
 
@@ -377,9 +390,20 @@ const CheckoutPage: React.FC = () => {
               Delivery Address
             </h2>
             <LocationPicker
-              onLocationSelect={(address) => setDeliveryAddress(address)}
+              onLocationSelect={(selectedAddress) => {
+                setDeliveryAddress((prev) => {
+                  return (
+                   { ...prev,
+                    ...selectedAddress
+                  }
+                  )
+                });
+              }}
               initialAddress={deliveryAddress}
             />
+
+            {errors.fullName && <p className="text-red-500 text-sm mt-2">{errors.fullName}</p>}
+            {errors.phoneNumber && <p className="text-red-500 text-sm mt-2">{errors.phoneNumber}</p>}
             {errors.address && <p className="text-red-500 text-sm mt-2">{errors.address}</p>}
             {errors.pincode && <p className="text-red-500 text-sm mt-2">{errors.pincode}</p>}
           </div>
@@ -459,8 +483,8 @@ const CheckoutPage: React.FC = () => {
         </div>
 
         {/* Order Summary Sidebar */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-4 border border-gray-100">
+        <div className="lg:col-span-1 ">
+          <div className="bg-white rounded-2xl shadow-lg p-6 top-24 border sticky border-gray-100">
             <div className="mb-6">
               <h3 className="text-xl font-bold text-gray-800">Payment Summary</h3>
               <p className="text-sm text-gray-500 mt-1">Complete your purchase securely</p>

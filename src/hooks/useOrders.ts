@@ -15,14 +15,16 @@ export const useOrders = () => {
     transportationRequired?: boolean,
     couponCode?: string,
     couponDiscount?: number
-  ): Promise<{status: 'ok' | 'failed', value?: Order}> => {
+  ): Promise<{ status: 'ok'; value: Order } | { status: 'failed'; value: string }> => {
     try {
       setLoading(true);
       setError(null);
 
-      const subtotalAmount = cartItems.reduce((sum, item) => 
-        sum + (item.selectedSlab.price_per_bag * item.quantity), 0);
-      
+      const subtotalAmount = cartItems.reduce(
+        (sum, item) => sum + (item.selectedSlab.price_per_bag * item.quantity),
+        0
+      );
+
       const totalAmount = subtotalAmount - (couponDiscount || 0);
 
       const orderData = {
@@ -39,17 +41,22 @@ export const useOrders = () => {
           product_id: item.product.id,
           quantity: item.quantity,
           price_per_bag: item.selectedSlab.price_per_bag,
-          slab_label: item.selectedSlab.label
-        }))
+          slab_label: item.selectedSlab.label,
+        })),
       };
 
       const order = await orderService.create(orderData);
-      return {status: 'ok', value: order};
+      return { status: 'ok', value: order };
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create order';
+      const errorMessage =
+        err
+          ? err.message
+          : typeof err === 'string'
+            ? err
+            : 'Failed to create order';
+
       setError(errorMessage);
-      return {status: 'failed', value: errorMessage};
-      throw new Error(errorMessage);
+      return { status: 'failed', value: errorMessage };
     } finally {
       setLoading(false);
     }
@@ -59,7 +66,7 @@ export const useOrders = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const order = await orderService.getById(id);
       return order;
     } catch (err) {
@@ -75,7 +82,7 @@ export const useOrders = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const order = await orderService.updateStatus(id, status);
       return order;
     } catch (err) {

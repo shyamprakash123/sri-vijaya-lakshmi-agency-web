@@ -190,6 +190,16 @@ const PreOrderFlow: React.FC = () => {
         }
         break;
       case 3:
+        if (!deliveryAddress.fullName.trim()) {
+          newErrors.fullName = 'Full Name is required';
+        }
+    
+        if (!deliveryAddress.phoneNumber?.trim()) {
+          newErrors.phoneNumber = 'Phone Number is required';
+        } else if (!/^[6-9]\d{9}$/.test(deliveryAddress.phoneNumber)) {
+          newErrors.phoneNumber = 'Enter a valid 10-digit phone number';
+        }
+        
         if (!deliveryAddress.fullAddress.trim()) {
           newErrors.address = 'Delivery address is required';
         }
@@ -541,11 +551,21 @@ const PreOrderFlow: React.FC = () => {
 
             {/* Location Picker */}
             <LocationPicker
-              onLocationSelect={(address) => setDeliveryAddress(address)}
+              onLocationSelect={(selectedAddress) => {
+                setDeliveryAddress((prev) => {
+                  return (
+                   { ...prev,
+                    ...selectedAddress
+                  }
+                  )
+                });
+              }}
               initialAddress={deliveryAddress}
             />
 
             {/* Address Errors */}
+            {errors.fullName && <p className="text-red-500 text-sm mt-2">{errors.fullName}</p>}
+            {errors.phoneNumber && <p className="text-red-500 text-sm mt-2">{errors.phoneNumber}</p>}
             {errors.address && <p className="text-red-500 text-sm">{errors.address}</p>}
             {errors.pincode && <p className="text-red-500 text-sm">{errors.pincode}</p>}
 

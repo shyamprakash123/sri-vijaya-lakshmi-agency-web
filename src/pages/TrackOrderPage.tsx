@@ -81,14 +81,20 @@ const TrackOrderPage: React.FC = () => {
     }
   };
 
+  const getPaymentStatusIcon = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Clock className="w-6 h-6 text-yellow-500" />;
+      case 'partial':
+      case 'completed':
+        return <CheckCircle className="w-6 h-6 text-blue-500" />;
+    }
+  };
+
   const getStatusText = (status: string) => {
     switch (status) {
       case 'pending':
-        return 'Payment Pending';
-      case 'prepaid':
-        return 'Partially Paid (Pre-order)';
-      case 'fully_paid':
-        return 'Payment Completed';
+        return 'Waiting To Process Order';
       case 'preparing':
         return 'Preparing For Dispatch';
       case 'dispatched':
@@ -102,13 +108,21 @@ const TrackOrderPage: React.FC = () => {
     }
   };
 
+  const getPaymentStatusText = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'Payment Pending';
+      case 'partial':
+        return 'Partially Paid (Pre-order)';
+      case 'completed':
+        return 'Payment Completed';
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
         return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'prepaid':
-      case 'fully_paid':
-        return 'text-blue-600 bg-blue-50 border-blue-200';
       case 'preparing':
         return 'text-purple-600 bg-purple-50 border-purple-200';
       case 'dispatched':
@@ -119,6 +133,16 @@ const TrackOrderPage: React.FC = () => {
         return 'text-red-600 bg-red-50 border-red-200';
       default:
         return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
+
+  const getPaymentStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'partial':
+      case 'completed':
+        return 'text-blue-600 bg-blue-50 border-blue-200';
     }
   };
 
@@ -195,36 +219,35 @@ const TrackOrderPage: React.FC = () => {
 
               {/* Status */}
               <div className="p-6 border-b border-gray-200">
-                {orderData.payment_status !== "pending" &&
-                  <div className={`flex items-center space-x-3 p-4 rounded-lg border mb-2 ${getStatusColor(orderData.payment_status)}`}>
-                    {getStatusIcon(orderData.payment_status)}
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg">{getStatusText(orderData.payment_status)}</h3>
-                    </div>
-                  </div>}
+                <div className={`flex items-center space-x-3 p-4 rounded-lg border mb-2 ${getPaymentStatusColor(orderData.payment_status)}`}>
+                  {getPaymentStatusIcon(orderData.payment_status)}
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg">{getPaymentStatusText(orderData.payment_status)}</h3>
+                  </div>
+                </div>
                 <div className={`flex items-center space-x-3 p-4 rounded-lg border ${getStatusColor(orderData.order_status)}`}>
                   {getStatusIcon(orderData.order_status)}
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg">{getStatusText(orderData.order_status)}</h3>
                     {orderData.scheduled_delivery && (
                       <>
-                      <p className="text-sm opacity-75">
-                        Scheduled for: {new Date(orderData.scheduled_delivery).toLocaleDateString('en-IN', {
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                      {orderData.order_type === "preorder" && orderData.payment_status === "pending" &&
-                       <p className="text-sm opacity-75">
-                          Please Pay the Half Amount to confirm the pre-order (Expire After 24 Hrs)
-                      </p>}
+                        <p className="text-sm opacity-75">
+                          Scheduled for: {new Date(orderData.scheduled_delivery).toLocaleDateString('en-IN', {
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                        {orderData.order_type === "preorder" && orderData.payment_status === "pending" &&
+                          <p className="text-sm opacity-75">
+                            Please Pay the Half Amount to confirm the pre-order (Expire After 24 Hrs)
+                          </p>}
 
-                      {orderData.order_type === "preorder" && orderData.payment_status === "partial" &&
-                       <p className="text-sm opacity-75">
-                          Please Pay remaining Half Amount to before scheduled date (Will be dispatched after payment)
-                      </p>}
+                        {orderData.order_type === "preorder" && orderData.payment_status === "partial" &&
+                          <p className="text-sm opacity-75">
+                            Please Pay remaining Half Amount to before scheduled date (Will be dispatched after payment)
+                          </p>}
                       </>
                     )}
                   </div>
@@ -288,7 +311,7 @@ const TrackOrderPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              {(orderData.payment_status === "pending" || orderData.payment_status === "partial") &&
+              {(orderData.payment_status === "pending" || orderData.payment_status === "partial") && orderData.order_status !== 'canceled' &&
                 <PayNowSection
                   upiUrl={generateUpiLink({
                     payeeVPA: import.meta.env.VITE_UPI_ID,

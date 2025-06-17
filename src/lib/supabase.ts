@@ -315,13 +315,20 @@ export const orderService = {
         order_items (
           *,
           products (*)
+        ),
+        transaction:phonepe_transactions!orders_transaction_id_fkey (
+          id,
+          amount,
+          transaction_utr,
+          processed_at
         )
       `)
       .order('created_at', { ascending: false });
-
+  
     if (error) throw error;
     return data;
   },
+  
 
   async updateStatus(id: string, status: string) {
     const { data, error } = await supabase
@@ -333,8 +340,23 @@ export const orderService = {
 
     if (error) throw error;
     return data;
+  },
+
+  async updatePaymentStatus(id: string, status: string) {
+    const { data, error } = await supabase
+      .from('orders')
+      .update({ payment_status: status })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
   }
 };
+
+
+
 
 export const couponService = {
   async getByCode(code: string) {
