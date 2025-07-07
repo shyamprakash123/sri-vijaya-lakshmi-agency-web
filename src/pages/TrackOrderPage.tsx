@@ -1,22 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Package, Clock, CheckCircle, Truck, MapPin, Phone, Mail, Loader2, AlertCircle, X } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import { orderService, supabase } from '../lib/supabase';
-import { Order } from '../types';
-import PayNowSection from '../components/ui/PayNowSection';
-import { generateUpiLink } from '../lib/UPILinkGenerator';
-import { encryptOrderInfo } from '../lib/EncryptToken';
-import { useOrders } from '../hooks/useOrders';
-import CancelOrderButton from '../components/ui/CancelOrderButton';
-import { LoaderIcon } from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import {
+  Search,
+  Package,
+  Clock,
+  CheckCircle,
+  Truck,
+  MapPin,
+  Phone,
+  Mail,
+  Loader2,
+  AlertCircle,
+  X,
+} from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
+import { orderService, supabase } from "../lib/supabase";
+import { Order } from "../types";
+import PayNowSection from "../components/ui/PayNowSection";
+import { generateUpiLink } from "../lib/UPILinkGenerator";
+import { encryptOrderInfo } from "../lib/EncryptToken";
+import { useOrders } from "../hooks/useOrders";
+import CancelOrderButton from "../components/ui/CancelOrderButton";
+import { LoaderIcon } from "react-hot-toast";
 
 const TrackOrderPage: React.FC = () => {
   const { updateOrderStatus } = useOrders;
-  const [orderId, setOrderId] = useState('');
+  const [orderId, setOrderId] = useState("");
   const [orderData, setOrderData] = useState<Order | null>(null);
   const [userOrders, setUserOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loadingUserOrders, setLoadingUserOrders] = useState(false);
 
   const { user } = useAuth();
@@ -34,8 +46,12 @@ const TrackOrderPage: React.FC = () => {
     try {
       const orders = await orderService.getUserOrders(user.id);
       setUserOrders(orders);
+      if (orderData) {
+        const order = orders.find((order) => order.id === orderData.id);
+        setOrderData(order);
+      }
     } catch (error) {
-      console.error('Failed to fetch user orders:', error);
+      console.error("Failed to fetch user orders:", error);
     } finally {
       setLoadingUserOrders(false);
     }
@@ -43,18 +59,18 @@ const TrackOrderPage: React.FC = () => {
 
   const handleSearch = async () => {
     if (!orderId.trim()) {
-      setError('Please enter an order ID');
+      setError("Please enter an order ID");
       return;
     }
 
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       const order = await orderService.getById(orderId);
       setOrderData(order);
     } catch (err) {
-      setError('Order not found. Please check your order ID and try again.');
+      setError("Order not found. Please check your order ID and try again.");
       setOrderData(null);
     } finally {
       setLoading(false);
@@ -63,18 +79,18 @@ const TrackOrderPage: React.FC = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending':
+      case "pending":
         return <Clock className="w-6 h-6 text-yellow-500" />;
-      case 'prepaid':
-      case 'fully_paid':
+      case "prepaid":
+      case "fully_paid":
         return <CheckCircle className="w-6 h-6 text-blue-500" />;
-      case 'dispatched':
+      case "dispatched":
         return <Truck className="w-6 h-6 text-purple-500" />;
-      case 'preparing':
+      case "preparing":
         return <LoaderIcon className="w-6 h-6 text-purple-500" />;
-      case 'delivered':
+      case "delivered":
         return <CheckCircle className="w-6 h-6 text-green-500" />;
-      case 'canceled':
+      case "canceled":
         return <X className="w-6 h-6 text-red-600" />;
       default:
         return <Package className="w-6 h-6 text-gray-500" />;
@@ -83,26 +99,26 @@ const TrackOrderPage: React.FC = () => {
 
   const getPaymentStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending':
+      case "pending":
         return <Clock className="w-6 h-6 text-yellow-500" />;
-      case 'partial':
-      case 'completed':
+      case "partial":
+      case "completed":
         return <CheckCircle className="w-6 h-6 text-blue-500" />;
     }
   };
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'pending':
-        return 'Waiting To Process Order';
-      case 'preparing':
-        return 'Preparing For Dispatch';
-      case 'dispatched':
-        return 'Out for Delivery';
-      case 'delivered':
-        return 'Delivered';
-      case 'canceled':
-        return 'Canceled';
+      case "pending":
+        return "Waiting To Process Order";
+      case "preparing":
+        return "Preparing For Dispatch";
+      case "dispatched":
+        return "Out for Delivery";
+      case "delivered":
+        return "Delivered";
+      case "canceled":
+        return "Canceled";
       default:
         return status;
     }
@@ -110,39 +126,39 @@ const TrackOrderPage: React.FC = () => {
 
   const getPaymentStatusText = (status: string) => {
     switch (status) {
-      case 'pending':
-        return 'Payment Pending';
-      case 'partial':
-        return 'Partially Paid (Pre-order)';
-      case 'completed':
-        return 'Payment Completed';
+      case "pending":
+        return "Payment Pending";
+      case "partial":
+        return "Partially Paid (Pre-order)";
+      case "completed":
+        return "Payment Completed";
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'preparing':
-        return 'text-purple-600 bg-purple-50 border-purple-200';
-      case 'dispatched':
-        return 'text-purple-600 bg-purple-50 border-purple-200';
-      case 'delivered':
-        return 'text-green-600 bg-green-50 border-green-200';
-      case 'canceled':
-        return 'text-red-600 bg-red-50 border-red-200';
+      case "pending":
+        return "text-yellow-600 bg-yellow-50 border-yellow-200";
+      case "preparing":
+        return "text-purple-600 bg-purple-50 border-purple-200";
+      case "dispatched":
+        return "text-purple-600 bg-purple-50 border-purple-200";
+      case "delivered":
+        return "text-green-600 bg-green-50 border-green-200";
+      case "canceled":
+        return "text-red-600 bg-red-50 border-red-200";
       default:
-        return 'text-gray-600 bg-gray-50 border-gray-200';
+        return "text-gray-600 bg-gray-50 border-gray-200";
     }
   };
 
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
-      case 'pending':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'partial':
-      case 'completed':
-        return 'text-blue-600 bg-blue-50 border-blue-200';
+      case "pending":
+        return "text-yellow-600 bg-yellow-50 border-yellow-200";
+      case "partial":
+      case "completed":
+        return "text-blue-600 bg-blue-50 border-blue-200";
     }
   };
 
@@ -151,14 +167,18 @@ const TrackOrderPage: React.FC = () => {
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">Track Your Order</h1>
-          <p className="text-gray-600">Enter your order ID to get real-time delivery updates</p>
+          <h1 className="text-3xl font-bold text-gray-800 mb-4">
+            Track Your Order
+          </h1>
+          <p className="text-gray-600">
+            Enter your order ID to get real-time delivery updates
+          </p>
         </div>
 
         {/* Search Section */}
         <div className="max-w-md mx-auto mb-8">
           <div className="bg-white rounded-lg shadow-md p-6">
-            <section id='orderHeader'>
+            <section id="orderHeader">
               <div className="flex space-x-3">
                 <div className="flex-1">
                   <input
@@ -167,7 +187,7 @@ const TrackOrderPage: React.FC = () => {
                     value={orderId}
                     onChange={(e) => setOrderId(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                    onKeyPress={(e) => e.key === "Enter" && handleSearch()}
                   />
                 </div>
                 <button
@@ -180,14 +200,14 @@ const TrackOrderPage: React.FC = () => {
                   ) : (
                     <Search size={20} />
                   )}
-                  <span className="hidden sm:inline">{loading ? 'Searching...' : 'Track'}</span>
+                  <span className="hidden sm:inline">
+                    {loading ? "Searching..." : "Track"}
+                  </span>
                 </button>
               </div>
             </section>
 
-            {error && (
-              <p className="text-red-500 text-sm mt-3">{error}</p>
-            )}
+            {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
           </div>
         </div>
 
@@ -199,94 +219,138 @@ const TrackOrderPage: React.FC = () => {
               <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-2xl font-bold">Order #{orderData.id}</h2>
+                    <h2 className="text-2xl font-bold">
+                      Order #{orderData.id}
+                    </h2>
                     <p className="opacity-90">
-                      Placed on {new Date(orderData.created_at).toLocaleDateString('en-IN', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                      Placed on{" "}
+                      {new Date(orderData.created_at).toLocaleDateString(
+                        "en-IN",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }
+                      )}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold">₹{orderData.total_amount}</p>
-                    <p className="opacity-90">{orderData.order_items?.length || 0} item(s)</p>
+                    <p className="text-2xl font-bold">
+                      ₹{orderData.total_amount}
+                    </p>
+                    <p className="opacity-90">
+                      {orderData.order_items?.length || 0} item(s)
+                    </p>
                   </div>
                 </div>
               </div>
 
               {/* Status */}
               <div className="p-6 border-b border-gray-200">
-                <div className={`flex items-center space-x-3 p-4 rounded-lg border mb-2 ${getPaymentStatusColor(orderData.payment_status)}`}>
+                <div
+                  className={`flex items-center space-x-3 p-4 rounded-lg border mb-2 ${getPaymentStatusColor(
+                    orderData.payment_status
+                  )}`}
+                >
                   {getPaymentStatusIcon(orderData.payment_status)}
                   <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{getPaymentStatusText(orderData.payment_status)}</h3>
+                    <h3 className="font-semibold text-lg">
+                      {getPaymentStatusText(orderData.payment_status)}
+                    </h3>
                   </div>
                 </div>
-                <div className={`flex items-center space-x-3 p-4 rounded-lg border ${getStatusColor(orderData.order_status)}`}>
+                <div
+                  className={`flex items-center space-x-3 p-4 rounded-lg border ${getStatusColor(
+                    orderData.order_status
+                  )}`}
+                >
                   {getStatusIcon(orderData.order_status)}
                   <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{getStatusText(orderData.order_status)}</h3>
+                    <h3 className="font-semibold text-lg">
+                      {getStatusText(orderData.order_status)}
+                    </h3>
                     {orderData.scheduled_delivery && (
                       <>
                         <p className="text-sm opacity-75">
-                          Scheduled for: {new Date(orderData.scheduled_delivery).toLocaleDateString('en-IN', {
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
+                          Scheduled for:{" "}
+                          {new Date(
+                            orderData.scheduled_delivery
+                          ).toLocaleDateString("en-IN", {
+                            month: "long",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
                           })}
                         </p>
-                        {orderData.order_type === "preorder" && orderData.payment_status === "pending" &&
-                          <p className="text-sm opacity-75">
-                            Please Pay the Half Amount to confirm the pre-order (Expire After 24 Hrs)
-                          </p>}
+                        {orderData.order_type === "preorder" &&
+                          orderData.payment_status === "pending" && (
+                            <p className="text-sm opacity-75">
+                              Please Pay the Half Amount to confirm the
+                              pre-order (Expire After 24 Hrs)
+                            </p>
+                          )}
 
-                        {orderData.order_type === "preorder" && orderData.payment_status === "partial" &&
-                          <p className="text-sm opacity-75">
-                            Please Pay remaining Half Amount to before scheduled date (Will be dispatched after payment)
-                          </p>}
+                        {orderData.order_type === "preorder" &&
+                          orderData.payment_status === "partial" && (
+                            <p className="text-sm opacity-75">
+                              Please Pay remaining Half Amount to before
+                              scheduled date (Will be dispatched after payment)
+                            </p>
+                          )}
                       </>
                     )}
                   </div>
                 </div>
-                {orderData.payment_status === "pending" && orderData.order_status === "pending" &&
-                  <CancelOrderButton
-                    orderId={orderData.id}
-                    onCancel={async (id) => {
-                      const { error } = await supabase
-                        .from('orders')
-                        .update({ order_status: 'canceled' })
-                        .eq('id', id);
+                {orderData.payment_status === "pending" &&
+                  orderData.order_status === "pending" && (
+                    <CancelOrderButton
+                      orderId={orderData.id}
+                      onCancel={async (id) => {
+                        const { error } = await supabase
+                          .from("orders")
+                          .update({ order_status: "canceled" })
+                          .eq("id", id);
 
-                      if (error) throw new Error(error.message);
+                        if (error) throw new Error(error.message);
 
-                      setOrderData((prev) => {
-                        return {
-                          ...prev,
-                          order_status: "canceled"
-                        }
-                      });
-                    }}
-                  />}
+                        setOrderData((prev) => {
+                          return {
+                            ...prev,
+                            order_status: "canceled",
+                          };
+                        });
+                      }}
+                    />
+                  )}
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
                 {/* Order Items */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Order Items</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                    Order Items
+                  </h3>
                   <div className="space-y-3">
                     {orderData.order_items?.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
                         <div>
-                          <p className="font-medium text-gray-800">{item.products?.name}</p>
-                          <p className="text-sm text-gray-600">{item.products?.weight} • {item.slab_label}</p>
+                          <p className="font-medium text-gray-800">
+                            {item.products?.name}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {item.products?.weight} • {item.slab_label}
+                          </p>
                         </div>
                         <div className="text-right">
                           <p className="font-semibold">Qty: {item.quantity}</p>
-                          <p className="text-sm text-gray-600">₹{item.price_per_bag * item.quantity}</p>
+                          <p className="text-sm text-gray-600">
+                            ₹{item.price_per_bag * item.quantity}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -295,36 +359,54 @@ const TrackOrderPage: React.FC = () => {
 
                 {/* Delivery Information */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Delivery Information</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                    Delivery Information
+                  </h3>
                   <div className="space-y-4">
                     <div className="flex items-start space-x-3">
                       <MapPin size={20} className="text-orange-500 mt-1" />
                       <div>
-                        <p className="font-medium text-gray-800">Delivery Address</p>
-                        <p className="text-gray-600">{orderData.delivery_address.fullAddress}</p>
-                        <p className="text-gray-600">Pincode: {orderData.delivery_address.pincode}</p>
+                        <p className="font-medium text-gray-800">
+                          Delivery Address
+                        </p>
+                        <p className="text-gray-600">
+                          {orderData.delivery_address.fullAddress}
+                        </p>
+                        <p className="text-gray-600">
+                          Pincode: {orderData.delivery_address.pincode}
+                        </p>
                         {orderData.delivery_address.landmark && (
-                          <p className="text-gray-600">Landmark: {orderData.delivery_address.landmark}</p>
+                          <p className="text-gray-600">
+                            Landmark: {orderData.delivery_address.landmark}
+                          </p>
                         )}
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              {(orderData.payment_status === "pending" || orderData.payment_status === "partial") && orderData.order_status !== 'canceled' &&
-                <PayNowSection
-                  upiUrl={generateUpiLink({
-                    payeeVPA: import.meta.env.VITE_UPI_ID,
-                    payeeName: 'Sri Vijaya Lakshmi',
-                    amount: orderData.order_type === "instant" ? orderData.total_amount : orderData.total_amount / 2,
-                    transactionNote: encryptOrderInfo({
-                      order_id: orderData.id,
-                      user_id: user?.id,
-                      amount: orderData.total_amount,
-                    })
-                  })}
-                />
-              }
+              {(orderData.payment_status === "pending" ||
+                orderData.payment_status === "partial") &&
+                orderData.order_status !== "canceled" && (
+                  <PayNowSection
+                    upiUrl={generateUpiLink({
+                      payeeVPA: import.meta.env.VITE_UPI_ID,
+                      payeeName: "Sri Vijaya Lakshmi",
+                      amount:
+                        orderData.order_type === "instant"
+                          ? orderData.total_amount
+                          : orderData.total_amount / 2,
+                      transactionNote: encryptOrderInfo({
+                        order_id: orderData.id,
+                        user_id: user?.id,
+                        amount:
+                          orderData.order_type === "instant"
+                            ? orderData.total_amount
+                            : orderData.total_amount / 2,
+                      }),
+                    })}
+                  />
+                )}
             </div>
           </div>
         )}
@@ -334,13 +416,15 @@ const TrackOrderPage: React.FC = () => {
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-gray-800">Your Recent Orders</h3>
+                <h3 className="text-xl font-semibold text-gray-800">
+                  Your Recent Orders
+                </h3>
                 <button
                   onClick={fetchUserOrders}
                   disabled={loadingUserOrders}
                   className="text-orange-500 hover:text-orange-600 font-medium transition-colors"
                 >
-                  {loadingUserOrders ? 'Refreshing...' : 'Refresh'}
+                  {loadingUserOrders ? "Refreshing..." : "Refresh"}
                 </button>
               </div>
 
@@ -353,24 +437,36 @@ const TrackOrderPage: React.FC = () => {
                   {userOrders.map((order) => (
                     <div
                       key={order.id}
-                      className={`border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer ${orderData?.id === order.id ? "bg-primary-400" : ""}`}
+                      className={`border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer ${
+                        orderData?.id === order.id ? "bg-primary-400" : ""
+                      }`}
                       onClick={() => {
                         setOrderId(order.id);
                         setOrderData(order);
-                        const section = document.getElementById('orderHeader');
-                        section?.scrollIntoView({ behavior: 'smooth' });
+                        const section = document.getElementById("orderHeader");
+                        section?.scrollIntoView({ behavior: "smooth" });
                       }}
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-semibold text-gray-800">#{order.id}</p>
+                          <p className="font-semibold text-gray-800">
+                            #{order.id}
+                          </p>
                           <p className="text-sm text-gray-600">
-                            {new Date(order.created_at).toLocaleDateString('en-IN')}
+                            {new Date(order.created_at).toLocaleDateString(
+                              "en-IN"
+                            )}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-gray-800">₹{order.total_amount}</p>
-                          <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.order_status)}`}>
+                          <p className="font-semibold text-gray-800">
+                            ₹{order.total_amount}
+                          </p>
+                          <span
+                            className={`text-xs px-2 py-1 rounded-full ${getStatusColor(
+                              order.order_status
+                            )}`}
+                          >
                             {getStatusText(order.order_status)}
                           </span>
                         </div>
@@ -391,13 +487,16 @@ const TrackOrderPage: React.FC = () => {
         {/* Help Section */}
         <div className="max-w-2xl mx-auto mt-12">
           <div className="bg-white rounded-lg shadow-md p-6 text-center">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">Need Help?</h3>
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">
+              Need Help?
+            </h3>
             <p className="text-gray-600 mb-6">
-              If you have any questions about your order or need assistance, we're here to help!
+              If you have any questions about your order or need assistance,
+              we're here to help!
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4">
               <a
-                href="https://wa.me/+918374237713"
+                href="https://wa.me/+919550607240"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
@@ -406,7 +505,7 @@ const TrackOrderPage: React.FC = () => {
                 <span>WhatsApp Support</span>
               </a>
               <a
-                href="mailto:contact@srivijayalakshmirice.in"
+                href="mailto:contact@svlrice.in"
                 className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
               >
                 <Mail size={18} />

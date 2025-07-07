@@ -1,17 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Percent, Package, CheckCircle, ArrowRight, MapPin, CreditCard, Loader2, Truck, Store } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useProducts } from '../../hooks/useProducts';
-import { useOrders } from '../../hooks/useOrders';
-import { useCoupons } from '../../hooks/useCoupons';
-import { Product, PriceSlab, Address } from '../../types';
-import LocationPicker from '../location/LocationPicker';
-import { Toaster } from 'react-hot-toast';
-import toast from 'react-hot-toast';
-import { generateUpiLink } from '../../lib/UPILinkGenerator';
-import { encryptOrderInfo } from '../../lib/EncryptToken';
-import PayNowSectionCheckout from '../ui/PayNowSectionCheckout';
-import { useAuth } from '../../hooks/useAuth';
+import React, { useState, useEffect } from "react";
+import {
+  Calendar,
+  Clock,
+  Percent,
+  Package,
+  CheckCircle,
+  ArrowRight,
+  MapPin,
+  CreditCard,
+  Loader2,
+  Truck,
+  Store,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useProducts } from "../../hooks/useProducts";
+import { useOrders } from "../../hooks/useOrders";
+import { useCoupons } from "../../hooks/useCoupons";
+import { Product, PriceSlab, Address } from "../../types";
+import LocationPicker from "../location/LocationPicker";
+import { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
+import { generateUpiLink } from "../../lib/UPILinkGenerator";
+import { encryptOrderInfo } from "../../lib/EncryptToken";
+import PayNowSectionCheckout from "../ui/PayNowSectionCheckout";
+import { useAuth } from "../../hooks/useAuth";
 
 interface PreOrderItem {
   product: Product;
@@ -25,19 +37,21 @@ const PreOrderFlow: React.FC = () => {
   const { products, loading: productsLoading } = useProducts();
   const { createOrder, loading: orderLoading } = useOrders();
   const { validateCoupon, loading: couponLoading } = useCoupons();
-  const [gstNumber, setGstNumber] = useState('');
+  const [gstNumber, setGstNumber] = useState("");
   const [isValidGst, setIsValidGst] = useState(true);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [preOrderItems, setPreOrderItems] = useState<PreOrderItem[]>([]);
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedTime, setSelectedTime] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState<Address>({
-    fullAddress: '',
-    pincode: '',
-    landmark: ''
+    fullName: "",
+    phoneNumber: "",
+    fullAddress: "",
+    pincode: "",
+    landmark: "",
   });
-  const [couponCode, setCouponCode] = useState('');
+  const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [discount, setDiscount] = useState(0);
   const [transportationRequired, setTransportationRequired] = useState(false);
@@ -46,24 +60,25 @@ const PreOrderFlow: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const timeSlots = [
-    '6:00 AM - 8:00 AM',
-    '8:00 AM - 10:00 AM',
-    '10:00 AM - 12:00 PM',
-    '12:00 PM - 2:00 PM',
-    '2:00 PM - 4:00 PM',
-    '4:00 PM - 6:00 PM',
-    '6:00 PM - 8:00 PM'
+    "6:00 AM - 8:00 AM",
+    "8:00 AM - 10:00 AM",
+    "10:00 AM - 12:00 PM",
+    "12:00 PM - 2:00 PM",
+    "2:00 PM - 4:00 PM",
+    "4:00 PM - 6:00 PM",
+    "6:00 PM - 8:00 PM",
   ];
 
   const steps = [
-    { id: 1, title: 'Select Products', icon: Package },
-    { id: 2, title: 'Schedule Delivery', icon: Calendar },
-    { id: 3, title: 'Delivery Address', icon: MapPin },
-    { id: 4, title: 'Payment', icon: CreditCard }
+    { id: 1, title: "Select Products", icon: Package },
+    { id: 2, title: "Schedule Delivery", icon: Calendar },
+    { id: 3, title: "Delivery Address", icon: MapPin },
+    { id: 4, title: "Payment", icon: CreditCard },
   ];
 
   const validateGst = (value: string) => {
-    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    const gstRegex =
+      /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
     return gstRegex.test(value.toUpperCase());
   };
 
@@ -76,31 +91,48 @@ const PreOrderFlow: React.FC = () => {
   const addToPreOrder = (product: Product, quantity: number = 1) => {
     if (!product.price_slabs || product.price_slabs.length === 0) return;
 
-    const existingItem = preOrderItems.find(item => item.product.id === product.id);
+    const existingItem = preOrderItems.find(
+      (item) => item.product.id === product.id
+    );
     const selectedSlab = getSlabForQuantity(product, quantity);
 
     if (existingItem) {
       const newQuantity = existingItem.quantity + quantity;
       if (newQuantity > product.available_quantity) {
-        setErrors(prev => ({ ...prev, stock: `Only ${product.available_quantity} bags available for ${product.name}` }));
+        setErrors((prev) => ({
+          ...prev,
+          stock: `Only ${product.available_quantity} bags available for ${product.name}`,
+        }));
         return;
       }
 
-      setPreOrderItems(prev => prev.map(item =>
-        item.product.id === product.id
-          ? { ...item, quantity: newQuantity, selectedSlab: getSlabForQuantity(product, newQuantity) }
-          : item
-      ));
+      setPreOrderItems((prev) =>
+        prev.map((item) =>
+          item.product.id === product.id
+            ? {
+                ...item,
+                quantity: newQuantity,
+                selectedSlab: getSlabForQuantity(product, newQuantity),
+              }
+            : item
+        )
+      );
     } else {
       if (quantity > product.available_quantity) {
-        setErrors(prev => ({ ...prev, stock: `Only ${product.available_quantity} bags available for ${product.name}` }));
+        setErrors((prev) => ({
+          ...prev,
+          stock: `Only ${product.available_quantity} bags available for ${product.name}`,
+        }));
         return;
       }
 
-      setPreOrderItems(prev => [...prev, { product, quantity, selectedSlab }]);
+      setPreOrderItems((prev) => [
+        ...prev,
+        { product, quantity, selectedSlab },
+      ]);
     }
 
-    setErrors(prev => ({ ...prev, stock: '' }));
+    setErrors((prev) => ({ ...prev, stock: "" }));
   };
 
   const updateQuantity = (productId: string, quantity: number) => {
@@ -109,46 +141,54 @@ const PreOrderFlow: React.FC = () => {
       return;
     }
 
-    setPreOrderItems(prev => prev.map(item => {
-      if (item.product.id === productId) {
-        if (quantity > item.product.available_quantity) {
-          setErrors(prevErrors => ({
-            ...prevErrors,
-            stock: `Only ${item.product.available_quantity} bags available for ${item.product.name}`
-          }));
-          return item;
-        }
+    setPreOrderItems((prev) =>
+      prev.map((item) => {
+        if (item.product.id === productId) {
+          if (quantity > item.product.available_quantity) {
+            setErrors((prevErrors) => ({
+              ...prevErrors,
+              stock: `Only ${item.product.available_quantity} bags available for ${item.product.name}`,
+            }));
+            return item;
+          }
 
-        setErrors(prevErrors => ({ ...prevErrors, stock: '' }));
-        return {
-          ...item,
-          quantity,
-          selectedSlab: getSlabForQuantity(item.product, quantity)
-        };
-      }
-      return item;
-    }));
+          setErrors((prevErrors) => ({ ...prevErrors, stock: "" }));
+          return {
+            ...item,
+            quantity,
+            selectedSlab: getSlabForQuantity(item.product, quantity),
+          };
+        }
+        return item;
+      })
+    );
   };
 
   const removeFromPreOrder = (productId: string) => {
-    setPreOrderItems(prev => prev.filter(item => item.product.id !== productId));
+    setPreOrderItems((prev) =>
+      prev.filter((item) => item.product.id !== productId)
+    );
   };
 
-  const getSlabForQuantity = (product: Product, quantity: number): PriceSlab => {
+  const getSlabForQuantity = (
+    product: Product,
+    quantity: number
+  ): PriceSlab => {
     if (!product.price_slabs || product.price_slabs.length === 0) {
       return {
-        id: 'default',
+        id: "default",
         product_id: product.id,
         min_quantity: 1,
         max_quantity: null,
         price_per_bag: product.base_price,
-        label: 'Standard'
+        label: "Standard",
       };
     }
 
-    const slab = product.price_slabs.find(slab =>
-      quantity >= slab.min_quantity &&
-      (slab.max_quantity === null || quantity <= slab.max_quantity)
+    const slab = product.price_slabs.find(
+      (slab) =>
+        quantity >= slab.min_quantity &&
+        (slab.max_quantity === null || quantity <= slab.max_quantity)
     );
 
     return slab || product.price_slabs[0];
@@ -158,7 +198,7 @@ const PreOrderFlow: React.FC = () => {
     return preOrderItems.reduce((total, item) => {
       // Apply ₹10 preorder discount
       const discountedPrice = Math.ceil(item.selectedSlab.price_per_bag - 10);
-      return total + (discountedPrice * item.quantity);
+      return total + discountedPrice * item.quantity;
     }, 0);
   };
 
@@ -169,7 +209,7 @@ const PreOrderFlow: React.FC = () => {
   const getMinDate = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0];
+    return tomorrow.toISOString().split("T")[0];
   };
 
   const validateStep = (step: number) => {
@@ -178,36 +218,36 @@ const PreOrderFlow: React.FC = () => {
     switch (step) {
       case 1:
         if (preOrderItems.length === 0) {
-          newErrors.products = 'Please select at least one product';
+          newErrors.products = "Please select at least one product";
         }
         break;
       case 2:
         if (!selectedDate) {
-          newErrors.date = 'Please select delivery date';
+          newErrors.date = "Please select delivery date";
         }
         if (!selectedTime) {
-          newErrors.time = 'Please select delivery time';
+          newErrors.time = "Please select delivery time";
         }
         break;
       case 3:
         if (!deliveryAddress.fullName.trim()) {
-          newErrors.fullName = 'Full Name is required';
+          newErrors.fullName = "Full Name is required";
         }
-    
-        if (!deliveryAddress.phoneNumber?.trim()) {
-          newErrors.phoneNumber = 'Phone Number is required';
-        } else if (!/^[6-9]\d{9}$/.test(deliveryAddress.phoneNumber)) {
-          newErrors.phoneNumber = 'Enter a valid 10-digit phone number';
+
+        if (!deliveryAddress.phoneNumber) {
+          newErrors.phoneNumber = "Phone Number is required";
+        } else if (!/^[6-9]\d{9}$/.test(String(deliveryAddress.phoneNumber))) {
+          newErrors.phoneNumber = "Enter a valid 10-digit phone number";
         }
-        
+
         if (!deliveryAddress.fullAddress.trim()) {
-          newErrors.address = 'Delivery address is required';
+          newErrors.address = "Delivery address is required";
         }
         if (!deliveryAddress.pincode.trim()) {
-          newErrors.pincode = 'Pincode is required';
+          newErrors.pincode = "Pincode is required";
         }
         if (gstNumber !== "" && !isValidGst) {
-          newErrors.GST = 'Valid Gst is required';
+          newErrors.GST = "Valid Gst is required";
         }
         break;
     }
@@ -218,14 +258,14 @@ const PreOrderFlow: React.FC = () => {
 
   const handleNextStep = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, 4));
-      const section = document.getElementById('processSection');
-      section?.scrollIntoView({ behavior: 'smooth' });
+      setCurrentStep((prev) => Math.min(prev + 1, 4));
+      const section = document.getElementById("processSection");
+      section?.scrollIntoView({ behavior: "smooth" });
     }
   };
 
   const handlePrevStep = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1));
+    setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
 
   const handleApplyCoupon = async () => {
@@ -236,39 +276,46 @@ const PreOrderFlow: React.FC = () => {
       if (result.isValid && result.coupon && result.discount) {
         setAppliedCoupon(result.coupon);
         setDiscount(result.discount);
-        setErrors(prev => ({ ...prev, coupon: '' }));
+        setErrors((prev) => ({ ...prev, coupon: "" }));
       } else {
-        setErrors(prev => ({ ...prev, coupon: result.message }));
+        setErrors((prev) => ({ ...prev, coupon: result.message }));
         setAppliedCoupon(null);
         setDiscount(0);
       }
     } catch (error) {
-      setErrors(prev => ({ ...prev, coupon: 'Failed to validate coupon' }));
+      setErrors((prev) => ({ ...prev, coupon: "Failed to validate coupon" }));
     }
   };
 
   const handlePlaceOrder = async () => {
-    if (!validateStep(3)) return;
+    if (!validateStep(3)) {
+      console.log(errors);
+      return;
+    }
 
     try {
-      const scheduledDelivery = `${selectedDate}T${selectedTime.split(' - ')[0]}`;
+      const scheduledDelivery = `${selectedDate}T${
+        selectedTime.split(" - ")[0]
+      }`;
       const { status, value } = await createOrder(
-        preOrderItems.map(item => ({
+        preOrderItems.map((item) => ({
           product: item.product,
           quantity: item.quantity,
           selectedSlab: {
             ...item.selectedSlab,
-            price_per_bag: Math.ceil(item.selectedSlab.price_per_bag - 10) // Apply preorder discount
-          }
+            price_per_bag: Math.ceil(item.selectedSlab.price_per_bag - 10), // Apply preorder discount
+          },
         })),
         deliveryAddress,
-        'preorder',
+        "preorder",
         gstNumber || undefined,
         scheduledDelivery
       );
 
-      if (status === 'failed') {
-        toast.error("Order cannot be created. Stock is not available or Please complete payment or cancel your existing order.");
+      if (status === "failed") {
+        toast.error(
+          "Order cannot be created. Stock is not available or Please complete payment or cancel your existing order."
+        );
         return;
       }
 
@@ -278,14 +325,14 @@ const PreOrderFlow: React.FC = () => {
         amount: value?.total_amount,
       };
 
-      const encryptedInfo = encryptOrderInfo(orderInfo);
+      // const encryptedInfo = encryptOrderInfo(orderInfo);
 
       setOrderData(value);
-
     } catch (error) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        submit: error instanceof Error ? error.message : 'Failed to place order'
+        submit:
+          error instanceof Error ? error.message : "Failed to place order",
       }));
     }
   };
@@ -296,13 +343,13 @@ const PreOrderFlow: React.FC = () => {
         <PayNowSectionCheckout
           upiUrl={generateUpiLink({
             payeeVPA: import.meta.env.VITE_UPI_ID,
-            payeeName: 'Sri Vijaya Lakshmi',
+            payeeName: "Sri Vijaya Lakshmi",
             amount: orderData.total_amount / 2,
             transactionNote: encryptOrderInfo({
               order_id: orderData.id,
               user_id: user?.id,
-              amount: orderData.total_amount,
-            })
+              amount: orderData.total_amount / 2,
+            }),
           })}
         />
       </div>
@@ -320,7 +367,8 @@ const PreOrderFlow: React.FC = () => {
                 Select Products for Pre-Order
               </h2>
               <p className="text-sm sm:text-base text-gray-600">
-                Choose your rice varieties and quantities. Get ₹10 discount on all items!
+                Choose your rice varieties and quantities. Get ₹10 discount on
+                all items!
               </p>
             </div>
 
@@ -340,7 +388,8 @@ const PreOrderFlow: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {products.map((product) => {
                   const price =
-                    product.price_slabs?.[0]?.price_per_bag || product.base_price;
+                    product.price_slabs?.[0]?.price_per_bag ||
+                    product.base_price;
                   const discountedPrice = Math.round(price - 10);
 
                   return (
@@ -358,12 +407,15 @@ const PreOrderFlow: React.FC = () => {
                           ₹10 OFF
                         </span>
                         <span
-                          className={`absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-medium ${product.available_quantity > 0
-                            ? "bg-green-500 text-white"
-                            : "bg-red-500 text-white"
-                            }`}
+                          className={`absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-medium ${
+                            product.available_quantity > 0
+                              ? "bg-green-500 text-white"
+                              : "bg-red-500 text-white"
+                          }`}
                         >
-                          {product.available_quantity > 0 ? "In Stock" : "Out of Stock"}
+                          {product.available_quantity > 0
+                            ? "In Stock"
+                            : "Out of Stock"}
                         </span>
                       </div>
 
@@ -384,7 +436,9 @@ const PreOrderFlow: React.FC = () => {
                                 ₹{price}
                               </span>
                             </div>
-                            <span className="text-gray-500">{product.weight}</span>
+                            <span className="text-gray-500">
+                              {product.weight}
+                            </span>
                           </div>
                         </div>
 
@@ -434,7 +488,8 @@ const PreOrderFlow: React.FC = () => {
                             {item.product.weight} • {item.selectedSlab.label}
                           </p>
                           <p className="text-sm text-purple-600 font-medium">
-                            ₹{Math.ceil(item.selectedSlab.price_per_bag - 10)}/bag
+                            ₹{Math.ceil(item.selectedSlab.price_per_bag - 10)}
+                            /bag
                           </p>
                         </div>
                       </div>
@@ -482,18 +537,23 @@ const PreOrderFlow: React.FC = () => {
 
             {/* Product Error */}
             {errors.products && (
-              <p className="text-red-500 text-center text-sm">{errors.products}</p>
+              <p className="text-red-500 text-center text-sm">
+                {errors.products}
+              </p>
             )}
           </div>
         );
-
 
       case 2:
         return (
           <div className="max-w-2xl mx-auto space-y-6">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Schedule Your Delivery</h2>
-              <p className="text-gray-600">Choose your preferred delivery date and time slot</p>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                Schedule Your Delivery
+              </h2>
+              <p className="text-gray-600">
+                Choose your preferred delivery date and time slot
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -509,7 +569,9 @@ const PreOrderFlow: React.FC = () => {
                   min={getMinDate()}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
-                {errors.date && <p className="text-red-500 text-sm mt-2">{errors.date}</p>}
+                {errors.date && (
+                  <p className="text-red-500 text-sm mt-2">{errors.date}</p>
+                )}
                 <p className="text-sm text-gray-500 mt-2">
                   Minimum 24 hours advance booking required
                 </p>
@@ -525,16 +587,19 @@ const PreOrderFlow: React.FC = () => {
                     <button
                       key={index}
                       onClick={() => setSelectedTime(slot)}
-                      className={`w-full p-3 text-left rounded-lg border transition-colors ${selectedTime === slot
-                        ? 'bg-purple-500 text-white border-purple-500'
-                        : 'bg-white hover:bg-purple-50 border-gray-300'
-                        }`}
+                      className={`w-full p-3 text-left rounded-lg border transition-colors ${
+                        selectedTime === slot
+                          ? "bg-purple-500 text-white border-purple-500"
+                          : "bg-white hover:bg-purple-50 border-gray-300"
+                      }`}
                     >
                       {slot}
                     </button>
                   ))}
                 </div>
-                {errors.time && <p className="text-red-500 text-sm mt-2">{errors.time}</p>}
+                {errors.time && (
+                  <p className="text-red-500 text-sm mt-2">{errors.time}</p>
+                )}
               </div>
             </div>
           </div>
@@ -545,29 +610,38 @@ const PreOrderFlow: React.FC = () => {
           <div className="space-y-6">
             {/* Section Heading */}
             <div className="text-center pb-2 bg-white rounded-md shadow-sm">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1">Delivery Address</h2>
-              <p className="text-sm sm:text-base text-gray-600">Where should we deliver your order?</p>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1">
+                Delivery Address
+              </h2>
+              <p className="text-sm sm:text-base text-gray-600">
+                Where should we deliver your order?
+              </p>
             </div>
 
             {/* Location Picker */}
             <LocationPicker
               onLocationSelect={(selectedAddress) => {
                 setDeliveryAddress((prev) => {
-                  return (
-                   { ...prev,
-                    ...selectedAddress
-                  }
-                  )
+                  console.log({ ...prev, ...selectedAddress });
+                  return { ...prev, ...selectedAddress };
                 });
               }}
               initialAddress={deliveryAddress}
             />
 
             {/* Address Errors */}
-            {errors.fullName && <p className="text-red-500 text-sm mt-2">{errors.fullName}</p>}
-            {errors.phoneNumber && <p className="text-red-500 text-sm mt-2">{errors.phoneNumber}</p>}
-            {errors.address && <p className="text-red-500 text-sm">{errors.address}</p>}
-            {errors.pincode && <p className="text-red-500 text-sm">{errors.pincode}</p>}
+            {errors.fullName && (
+              <p className="text-red-500 text-sm mt-2">{errors.fullName}</p>
+            )}
+            {errors.phoneNumber && (
+              <p className="text-red-500 text-sm mt-2">{errors.phoneNumber}</p>
+            )}
+            {errors.address && (
+              <p className="text-red-500 text-sm">{errors.address}</p>
+            )}
+            {errors.pincode && (
+              <p className="text-red-500 text-sm">{errors.pincode}</p>
+            )}
 
             {/* Info Panels */}
             <div className="flex flex-col md:flex-row gap-6">
@@ -582,13 +656,16 @@ const PreOrderFlow: React.FC = () => {
                     placeholder="Enter GST Number"
                     value={gstNumber}
                     onChange={handleGstChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${isValidGst
-                      ? 'border-gray-300 focus:ring-purple-500'
-                      : 'border-red-500 focus:ring-red-400'
-                      }`}
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${
+                      isValidGst
+                        ? "border-gray-300 focus:ring-purple-500"
+                        : "border-red-500 focus:ring-red-400"
+                    }`}
                   />
                   {!isValidGst && gstNumber.length > 0 && (
-                    <p className="text-sm text-red-500 mt-1">Invalid GST number format</p>
+                    <p className="text-sm text-red-500 mt-1">
+                      Invalid GST number format
+                    </p>
                   )}
                 </div>
               </div>
@@ -606,14 +683,21 @@ const PreOrderFlow: React.FC = () => {
                     type="checkbox"
                     id="transportation"
                     checked={transportationRequired}
-                    onChange={(e) => setTransportationRequired(e.target.checked)}
+                    onChange={(e) =>
+                      setTransportationRequired(e.target.checked)
+                    }
                     className="w-5 h-5 mt-1 text-orange-500 accent-orange-500"
                   />
-                  <label htmlFor="transportation" className="flex-1 cursor-pointer">
-                    <p className="font-medium text-gray-800">Transportation Required</p>
+                  <label
+                    htmlFor="transportation"
+                    className="flex-1 cursor-pointer"
+                  >
+                    <p className="font-medium text-gray-800">
+                      Transportation Required
+                    </p>
                     <p className="text-sm text-gray-600 mt-1">
-                      Select this option if you require a transportation service.
-                      Transportation payment is made upon delivery.
+                      Select this option if you require a transportation
+                      service. Transportation payment is made upon delivery.
                       Your order will be dispatched within 1 hour.
                     </p>
                   </label>
@@ -624,10 +708,14 @@ const PreOrderFlow: React.FC = () => {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                     <div className="flex items-center space-x-2">
                       <Store size={18} className="text-blue-500" />
-                      <h4 className="font-semibold text-blue-800">Store Pickup Available</h4>
+                      <h4 className="font-semibold text-blue-800">
+                        Store Pickup Available
+                      </h4>
                     </div>
                     <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${import.meta.env.VITE_STORE_LAT},${import.meta.env.VITE_STORE_LNG}`}
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${
+                        import.meta.env.VITE_STORE_LAT
+                      },${import.meta.env.VITE_STORE_LNG}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition"
@@ -636,8 +724,10 @@ const PreOrderFlow: React.FC = () => {
                     </a>
                   </div>
                   <p className="text-sm text-blue-700 leading-relaxed">
-                    New Hafeezpet, Marthanda Nagar,<br />
-                    Hyderabad, Telangana - 500049<br />
+                    New Hafeezpet, Marthanda Nagar,
+                    <br />
+                    Hyderabad, Telangana - 500049
+                    <br />
                     POS machine available – All cards accepted.
                   </p>
                 </div>
@@ -646,25 +736,37 @@ const PreOrderFlow: React.FC = () => {
           </div>
         );
 
-
       case 4:
         return (
           <div className="max-w-2xl mx-auto space-y-8 px-4 sm:px-0">
             {/* Header */}
             <div className="text-center">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">Payment Summary</h2>
-              <p className="text-gray-600 text-sm sm:text-base">Review your order and complete the payment</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">
+                Payment Summary
+              </h2>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Review your order and complete the payment
+              </p>
             </div>
 
             {/* Order Summary */}
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Order Summary</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                Order Summary
+              </h3>
               <div className="space-y-3">
                 {preOrderItems.map((item) => (
-                  <div key={item.product.id} className="flex justify-between text-sm text-gray-700">
-                    <span>{item.product.name} × {item.quantity}</span>
+                  <div
+                    key={item.product.id}
+                    className="flex justify-between text-sm text-gray-700"
+                  >
+                    <span>
+                      {item.product.name} × {item.quantity}
+                    </span>
                     <span className="font-medium text-gray-900">
-                      ₹{Math.ceil(item.selectedSlab.price_per_bag - 10) * item.quantity}
+                      ₹
+                      {Math.ceil(item.selectedSlab.price_per_bag - 10) *
+                        item.quantity}
                     </span>
                   </div>
                 ))}
@@ -673,7 +775,9 @@ const PreOrderFlow: React.FC = () => {
 
             {/* Coupon Code Section */}
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Apply Coupon</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                Apply Coupon
+              </h3>
               <div className="flex flex-col sm:flex-row sm:space-x-3 space-y-3 sm:space-y-0 mb-3">
                 <input
                   type="text"
@@ -688,7 +792,7 @@ const PreOrderFlow: React.FC = () => {
                     onClick={() => {
                       setAppliedCoupon(null);
                       setDiscount(0);
-                      setCouponCode('');
+                      setCouponCode("");
                     }}
                     className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition"
                   >
@@ -700,14 +804,22 @@ const PreOrderFlow: React.FC = () => {
                     disabled={couponLoading || !couponCode.trim()}
                     className="px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white rounded-lg font-medium transition"
                   >
-                    {couponLoading ? <Loader2 size={16} className="animate-spin" /> : 'Apply'}
+                    {couponLoading ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      "Apply"
+                    )}
                   </button>
                 )}
               </div>
-              {errors.coupon && <p className="text-red-500 text-sm">{errors.coupon}</p>}
+              {errors.coupon && (
+                <p className="text-red-500 text-sm">{errors.coupon}</p>
+              )}
               {appliedCoupon && (
                 <p className="text-green-600 text-sm">
-                  🎉 Coupon "<span className="font-medium">{appliedCoupon.code}</span>" applied! You saved ₹{discount}
+                  🎉 Coupon "
+                  <span className="font-medium">{appliedCoupon.code}</span>"
+                  applied! You saved ₹{discount}
                 </p>
               )}
             </div>
@@ -716,8 +828,15 @@ const PreOrderFlow: React.FC = () => {
             <div className="bg-white rounded-xl shadow-lg p-6">
               <div className="space-y-4 text-sm text-gray-700">
                 <div className="flex justify-between">
-                  <span>Subtotal <span className="text-xs">(includes ₹10/bag pre-order discount)</span></span>
-                  <span className="font-medium text-gray-900">₹{getSubtotal()}</span>
+                  <span>
+                    Subtotal{" "}
+                    <span className="text-xs">
+                      (includes ₹10/bag pre-order discount)
+                    </span>
+                  </span>
+                  <span className="font-medium text-gray-900">
+                    ₹{getSubtotal()}
+                  </span>
                 </div>
 
                 {discount > 0 && (
@@ -730,12 +849,17 @@ const PreOrderFlow: React.FC = () => {
                 <hr className="border-gray-200" />
 
                 <div className="flex justify-between items-center pt-2">
-                  <span className="text-lg font-semibold text-gray-800">Total Amount</span>
-                  <span className="text-2xl font-bold text-purple-600">₹{getFinalAmount()}</span>
+                  <span className="text-lg font-semibold text-gray-800">
+                    Total Amount
+                  </span>
+                  <span className="text-2xl font-bold text-purple-600">
+                    ₹{getFinalAmount()}
+                  </span>
                 </div>
 
                 <p className="text-xs text-gray-500">
-                  Pay now: ₹{Math.ceil(getFinalAmount() / 2)} | Remaining before dispatch: ₹{Math.floor(getFinalAmount() / 2)}
+                  Pay now: ₹{Math.ceil(getFinalAmount() / 2)} | Remaining before
+                  dispatch: ₹{Math.floor(getFinalAmount() / 2)}
                 </p>
               </div>
             </div>
@@ -765,7 +889,6 @@ const PreOrderFlow: React.FC = () => {
           </div>
         );
 
-
       default:
         return null;
     }
@@ -779,14 +902,18 @@ const PreOrderFlow: React.FC = () => {
           <section id="processSection">
             <div className="flex items-center justify-between flex-wrap sm:flex-nowrap gap-y-6">
               {steps.map((step, index) => (
-                <div key={step.id} className="flex items-center flex-1 min-w-[120px]">
+                <div
+                  key={step.id}
+                  className="flex items-center flex-1 min-w-[120px]"
+                >
                   {/* Step Circle */}
                   <div
                     className={`flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-300 shadow-sm
-              ${currentStep >= step.id
-                        ? 'bg-purple-600 border-purple-600 text-white shadow-lg'
-                        : 'bg-white border-gray-300 text-gray-400'
-                      }`}
+              ${
+                currentStep >= step.id
+                  ? "bg-purple-600 border-purple-600 text-white shadow-lg"
+                  : "bg-white border-gray-300 text-gray-400"
+              }`}
                   >
                     <step.icon size={20} />
                   </div>
@@ -795,11 +922,19 @@ const PreOrderFlow: React.FC = () => {
                   <div className="ml-3 block sm:block">
                     <p
                       className={`text-sm font-semibold leading-4 transition-colors 
-                ${currentStep >= step.id ? 'text-purple-700' : 'text-gray-500'}`}
+                ${
+                  currentStep >= step.id ? "text-purple-700" : "text-gray-500"
+                }`}
                     >
                       Step {step.id}
                     </p>
-                    <p className={`text-xs ${currentStep >= step.id ? 'text-purple-600' : 'text-gray-500'}`}>
+                    <p
+                      className={`text-xs ${
+                        currentStep >= step.id
+                          ? "text-purple-600"
+                          : "text-gray-500"
+                      }`}
+                    >
                       {step.title}
                     </p>
                   </div>
@@ -809,7 +944,7 @@ const PreOrderFlow: React.FC = () => {
                     <div className="flex-1">
                       <div
                         className={`h-0.5 mx-4 transition-all duration-300
-                  ${currentStep > step.id ? 'bg-purple-500' : 'bg-gray-300'}`}
+                  ${currentStep > step.id ? "bg-purple-500" : "bg-gray-300"}`}
                       />
                     </div>
                   )}
@@ -819,11 +954,8 @@ const PreOrderFlow: React.FC = () => {
           </section>
         </div>
 
-
         {/* Step Content */}
-        <div className="max-w-6xl mx-auto">
-          {renderStepContent()}
-        </div>
+        <div className="max-w-6xl mx-auto">{renderStepContent()}</div>
 
         {/* Navigation Buttons */}
         <div className="max-w-2xl mx-auto mt-8 flex justify-between">
@@ -836,7 +968,7 @@ const PreOrderFlow: React.FC = () => {
           </button>
 
           {currentStep < 4 ? (
-            <section id='nextBtn'>
+            <section id="nextBtn">
               <button
                 onClick={handleNextStep}
                 disabled={currentStep === 1 && preOrderItems.length === 0}

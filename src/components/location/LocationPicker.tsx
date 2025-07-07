@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Search, Loader2, Navigation, X, Store } from 'lucide-react';
-import { Address } from '../../types';
-import { OlaMaps } from 'olamaps-web-sdk';
-import ReactDOMServer from 'react-dom/server';
+import React, { useState, useEffect, useRef } from "react";
+import { MapPin, Search, Loader2, Navigation, X, Store } from "lucide-react";
+import { Address } from "../../types";
+import { OlaMaps } from "olamaps-web-sdk";
+import ReactDOMServer from "react-dom/server";
 
 interface LocationPickerProps {
   onLocationSelect: (address: Address) => void;
@@ -15,30 +15,43 @@ declare global {
   }
 }
 
-const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initialAddress }) => {
-  const [searchQuery, setSearchQuery] = useState('');
+const LocationPicker: React.FC<LocationPickerProps> = ({
+  onLocationSelect,
+  initialAddress,
+}) => {
+  const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
   const [userName, setUserName] = useState<string>("");
-  const [phoneNumber, setPhoneNumber] = useState<string | number | undefined>("")
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState<string | number | undefined>(
+    ""
+  );
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
 
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
   const markerRef = useRef<any>(null);
 
+  const userNameRef = useRef("");
+  const phoneNumberRef = useRef("");
+
   const extractPincode = (address: string): string => {
     const pincodeMatch = address.match(/\b\d{6}\b/);
-    return pincodeMatch ? pincodeMatch[0] : '';
+    return pincodeMatch ? pincodeMatch[0] : "";
   };
 
   const reverseGeoCode = async (lat: number, lng: number) => {
     try {
       setLoading(true);
       const response = await fetch(
-        `https://api.olamaps.io/places/v1/reverse-geocode?latlng=${lat},${lng}&api_key=${import.meta.env.VITE_OLA_MAPS_API_KEY}`
+        `https://api.olamaps.io/places/v1/reverse-geocode?latlng=${lat},${lng}&api_key=${
+          import.meta.env.VITE_OLA_MAPS_API_KEY
+        }`
       );
 
       if (response.ok) {
@@ -46,23 +59,24 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
         const address = data.results[0];
         if (address) {
           const locationData: Address = {
-            fullName: userName,
-            phoneNumber: phoneNumber,
+            fullName: userNameRef.current,
+            phoneNumber: phoneNumberRef.current,
             fullAddress: address.formatted_address,
             pincode: extractPincode(address.formatted_address),
-            landmark: '',
+            landmark: "",
             coordinates: { lat, lng },
           };
           setSelectedLocation(locationData);
+          console.log("picker", locationData);
           onLocationSelect(locationData);
         }
       }
     } catch (err) {
-      console.error('Reverse geocode failed:', err);
+      console.error("Reverse geocode failed:", err);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   const updateMarker = (lat: number, lng: number) => {
     if (markerRef.current) {
@@ -78,12 +92,13 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
 
   const initMap = async () => {
     const olaMaps = new OlaMaps({
-      apiKey: import.meta.env.VITE_OLA_MAPS_API_KEY || 'demo-key',
+      apiKey: import.meta.env.VITE_OLA_MAPS_API_KEY || "demo-key",
     });
 
     const map = olaMaps.init({
       container: mapRef.current,
-      style: "https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json",
+      style:
+        "https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json",
       center: [78.36299833770227, 17.47471239945692],
       zoom: 14,
     });
@@ -92,19 +107,19 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
       <Store size={36} className="text-orange-600" />
     );
 
-    const el = document.createElement('div');
+    const el = document.createElement("div");
     el.innerHTML = iconHtml;
-    el.style.width = '36px';
-    el.style.height = '36px';
-    el.style.display = 'flex';
-    el.style.alignItems = 'center';
-    el.style.justifyContent = 'center';
-    el.style.cursor = 'pointer';
+    el.style.width = "36px";
+    el.style.height = "36px";
+    el.style.display = "flex";
+    el.style.alignItems = "center";
+    el.style.justifyContent = "center";
+    el.style.cursor = "pointer";
 
     const marker = olaMaps
       .addMarker({
         element: el,
-        anchor: 'bottom',
+        anchor: "bottom",
         draggable: false,
       })
       .setLngLat([
@@ -120,7 +135,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
       </div>
     `);
 
-    marker.setPopup(popup).togglePopup();;
+    marker.setPopup(popup).togglePopup();
 
     await reverseGeoCode(17.47471239945692, 78.36299833770227);
 
@@ -133,11 +148,11 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
 
     map.addControl(geolocate);
 
-    map.on('load', () => {
+    map.on("load", () => {
       geolocate.trigger();
     });
 
-    map.on('moveend', async () => {
+    map.on("moveend", async () => {
       const center = map.getCenter();
       const { lat, lng } = center;
 
@@ -163,14 +178,16 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
       setLoading(true);
       const locationParam = userLocation
         ? `location=${userLocation.lat},${userLocation.lng}&`
-        : '';
+        : "";
       const response = await fetch(
-        `https://api.olamaps.io/places/v1/autocomplete?${locationParam}input=${encodeURIComponent(query)}&api_key=${import.meta.env.VITE_OLA_MAPS_API_KEY}`
+        `https://api.olamaps.io/places/v1/autocomplete?${locationParam}input=${encodeURIComponent(
+          query
+        )}&api_key=${import.meta.env.VITE_OLA_MAPS_API_KEY}`
       );
       const data = await response.json();
       setSuggestions(data.predictions || []);
     } catch (error) {
-      console.error('Autocomplete error:', error);
+      console.error("Autocomplete error:", error);
     } finally {
       setLoading(false);
     }
@@ -179,22 +196,28 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
   const selectSuggestion = async (suggestion: any) => {
     try {
       setLoading(true);
-      const coords = suggestion?.geometry?.location || { lat: 17.439204293719442, lng: 78.35811839999997 };
+      const coords = suggestion?.geometry?.location || {
+        lat: 17.439204293719442,
+        lng: 78.35811839999997,
+      };
       const locationData: Address = {
-        fullName: userName,
-        phoneNumber: phoneNumber,
+        fullName: userNameRef.current,
+        phoneNumber: phoneNumberRef.current,
         fullAddress: suggestion.description,
         pincode: extractPincode(suggestion.description),
-        landmark: '',
+        landmark: "",
         coordinates: coords, // Placeholder
       };
       setSelectedLocation(locationData);
       setSearchQuery(suggestion.description);
       setSuggestions([]);
-      mapInstance.current?.flyTo({ center: [coords.lng, coords.lat], zoom: 15 });
+      mapInstance.current?.flyTo({
+        center: [coords.lng, coords.lat],
+        zoom: 15,
+      });
       onLocationSelect(locationData);
     } catch (error) {
-      console.error('Select suggestion failed:', error);
+      console.error("Select suggestion failed:", error);
     } finally {
       setLoading(false);
     }
@@ -203,37 +226,42 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
   const getCurrentLocation = () => {
     if (!navigator.geolocation) return;
     setLoading(true);
-    navigator.geolocation.getCurrentPosition(async (position) => {
-      const { latitude, longitude } = position.coords;
-      setUserLocation({ lat: latitude, lng: longitude });
-      try {
-        const response = await fetch(
-          `https://api.olamaps.io/places/v1/reverse-geocode?latlng=${latitude},${longitude}&api_key=${import.meta.env.VITE_OLA_MAPS_API_KEY}`
-        );
-        let address = 'Current Location';
-        if (response.ok) {
-          const data = await response.json();
-          address = data.results[0]?.formatted_address || 'Current Location';
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserLocation({ lat: latitude, lng: longitude });
+        try {
+          const response = await fetch(
+            `https://api.olamaps.io/places/v1/reverse-geocode?latlng=${latitude},${longitude}&api_key=${
+              import.meta.env.VITE_OLA_MAPS_API_KEY
+            }`
+          );
+          let address = "Current Location";
+          if (response.ok) {
+            const data = await response.json();
+            address = data.results[0]?.formatted_address || "Current Location";
+          }
+          const locationData = {
+            fullAddress: address,
+            pincode: extractPincode(address),
+            landmark: "",
+            coordinates: { lat: latitude, lng: longitude },
+          };
+          setSelectedLocation(locationData);
+          setSearchQuery(address);
+          updateMarker(latitude, longitude);
+          onLocationSelect(locationData);
+        } catch (error) {
+          console.error("Current location reverse geocoding failed:", error);
+        } finally {
+          setLoading(false);
         }
-        const locationData = {
-          fullAddress: address,
-          pincode: extractPincode(address),
-          landmark: '',
-          coordinates: { lat: latitude, lng: longitude },
-        };
-        setSelectedLocation(locationData);
-        setSearchQuery(address);
-        updateMarker(latitude, longitude);
-        onLocationSelect(locationData);
-      } catch (error) {
-        console.error('Current location reverse geocoding failed:', error);
-      } finally {
+      },
+      (err) => {
+        console.error("Geolocation error:", err);
         setLoading(false);
       }
-    }, (err) => {
-      console.error('Geolocation error:', err);
-      setLoading(false);
-    });
+    );
   };
 
   return (
@@ -242,14 +270,20 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
       <div className="w-full md:w-[400px] space-y-6 bg-white p-6 rounded-lg shadow-md z-30">
         {/* Name Input */}
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="name"
+            className="block text-sm font-medium text-gray-700"
+          >
             Full Name
           </label>
           <input
             id="name"
             type="text"
             value={userName}
-            onChange={(e) => setUserName(e.target.value)}
+            onChange={(e) => {
+              setUserName(e.target.value);
+              userNameRef.current = e.target.value;
+            }}
             className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
             placeholder="Enter your full name"
             required
@@ -258,14 +292,20 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
 
         {/* Phone Input */}
         <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="phone"
+            className="block text-sm font-medium text-gray-700"
+          >
             Phone Number
           </label>
           <input
             id="phone"
             type="tel"
             value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
+            onChange={(e) => {
+              setPhoneNumber(e.target.value);
+              phoneNumberRef.current = e.target.value;
+            }}
             className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
             placeholder="Enter your phone number"
             required
@@ -277,14 +317,15 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
           <div className="bg-white rounded shadow-md p-4 text-sm z-20">
             <div className="font-semibold">Delivery Address</div>
             <div>{selectedLocation.fullAddress}</div>
-            <div className="text-xs text-gray-500">Pincode: {selectedLocation.pincode}</div>
+            <div className="text-xs text-gray-500">
+              Pincode: {selectedLocation.pincode}
+            </div>
           </div>
         )}
       </div>
 
       {/* Right Panel: Map */}
       <div className="relative w-full h-[400px] md:h-[500px] rounded-lg overflow-hidden">
-
         {/* Map Element */}
         <div ref={mapRef} className="absolute inset-0 w-full h-full z-0" />
 
@@ -312,7 +353,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
             <X
               className="ml-2 cursor-pointer text-gray-500"
               onClick={() => {
-                setSearchQuery('');
+                setSearchQuery("");
                 setSuggestions([]);
               }}
             />
@@ -336,7 +377,6 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
       </div>
     </div>
   );
-
 };
 
 export default LocationPicker;

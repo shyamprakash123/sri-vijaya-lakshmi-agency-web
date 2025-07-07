@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { ShoppingCart, Menu, User, Phone, Search, LogOut } from 'lucide-react';
-import { useCart } from '../../hooks/useCart';
-import { useAuth } from '../../hooks/useAuth';
-import { useToast } from '../../hooks/useToast';
-import AuthModal from '../auth/AuthModal';
-import CartSlider from '../cart/CartSlider';
-import SearchModal from './SearchModal';
+import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { ShoppingCart, Menu, User, Phone, Search, LogOut } from "lucide-react";
+import { useCart } from "../../hooks/useCart";
+import { useAuth } from "../../hooks/useAuth";
+import { useToast } from "../../hooks/useToast";
+import AuthModal from "../auth/AuthModal";
+import CartSlider from "../cart/CartSlider";
+import SearchModal from "./SearchModal";
 
 const Header: React.FC = () => {
   const location = useLocation();
@@ -15,19 +15,19 @@ const Header: React.FC = () => {
   const { success } = useToast();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const navItems = [
-    { name: 'Home', path: '/' },
-    { name: 'Products', path: '/products' },
-    { name: 'Pre-Order', path: '/preorder' },
-    { name: 'Track Order', path: '/orders' },
-    { name: 'Contact', path: '/contact' }
+    { name: "Home", path: "/" },
+    { name: "Products", path: "/products" },
+    { name: "Pre-Order", path: "/preorder" },
+    { name: "Track Order", path: "/orders" },
+    { name: "Contact", path: "/contact" },
   ];
 
-  const handleAuthClick = (mode: 'login' | 'signup') => {
+  const handleAuthClick = (mode: "login" | "signup") => {
     setAuthMode(mode);
     setIsAuthModalOpen(true);
   };
@@ -35,9 +35,12 @@ const Header: React.FC = () => {
   const handleSignOut = async () => {
     try {
       await signOut();
-      success('Signed out successfully', 'You have been logged out of your account.');
+      success(
+        "Signed out successfully",
+        "You have been logged out of your account."
+      );
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error("Sign out error:", error);
     }
   };
 
@@ -53,23 +56,28 @@ const Header: React.FC = () => {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-xl">🌾</span>
-              </div>
+              <img
+                src="/web-app-manifest-192x192.png"
+                alt="Sri Vijaya Lakshmi Agency"
+                className="w-16 h-16 rounded-full object-contain"
+                loading="lazy"
+              />
               <div>
-                <h1 className="text-xl font-bold text-gray-800">Sri Vijaya Lakshmi Rice</h1>
+                <h1 className="text-xl font-bold text-gray-800">
+                  Sri Vijaya Lakshmi Rice
+                </h1>
                 <p className="text-sm text-gray-600">Premium Rice Agency</p>
               </div>
             </Link>
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center space-x-8">
-              {navItems.map(item => (
+              {navItems.map((item) => (
                 <Link
                   key={item.path}
                   to={item.path}
                   className={`text-gray-700 hover:text-orange-500 font-medium transition-colors relative ${
-                    location.pathname === item.path ? 'text-orange-500' : ''
+                    location.pathname === item.path ? "text-orange-500" : ""
                   }`}
                 >
                   {item.name}
@@ -83,7 +91,7 @@ const Header: React.FC = () => {
             {/* Right Side Actions */}
             <div className="flex items-center space-x-4">
               {/* Search */}
-              <button 
+              <button
                 onClick={handleSearchClick}
                 className="hidden md:flex items-center space-x-2 text-gray-600 hover:text-orange-500 transition-colors p-2 hover:bg-gray-100 rounded-lg"
                 title="Search products"
@@ -93,7 +101,7 @@ const Header: React.FC = () => {
 
               {/* WhatsApp Contact */}
               <a
-                href="https://wa.me/+918374237713"
+                href="https://wa.me/+919550607240"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hidden sm:flex items-center space-x-2 bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition-colors"
@@ -106,14 +114,14 @@ const Header: React.FC = () => {
               {!user ? (
                 <div className="hidden md:flex items-center space-x-2">
                   <button
-                    onClick={() => handleAuthClick('login')}
+                    onClick={() => handleAuthClick("login")}
                     className="text-gray-700 hover:text-orange-500 font-medium transition-colors"
                   >
                     Login
                   </button>
                   <span className="text-gray-400">|</span>
                   <button
-                    onClick={() => handleAuthClick('signup')}
+                    onClick={() => handleAuthClick("signup")}
                     className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-full font-medium transition-colors"
                   >
                     Sign Up
@@ -126,7 +134,7 @@ const Header: React.FC = () => {
                       <User size={16} className="text-white" />
                     </div>
                     <span className="text-sm font-medium text-gray-700">
-                      {user.user_metadata?.name || user.email?.split('@')[0]}
+                      {user.user_metadata?.name || user.email?.split("@")[0]}
                     </span>
                   </div>
                   <button
@@ -178,25 +186,25 @@ const Header: React.FC = () => {
                   <span>Search Products</span>
                 </button>
 
-                {navItems.map(item => (
+                {navItems.map((item) => (
                   <Link
                     key={item.path}
                     to={item.path}
                     onClick={() => setIsMenuOpen(false)}
                     className={`text-gray-700 hover:text-orange-500 font-medium transition-colors ${
-                      location.pathname === item.path ? 'text-orange-500' : ''
+                      location.pathname === item.path ? "text-orange-500" : ""
                     }`}
                   >
                     {item.name}
                   </Link>
                 ))}
-                
+
                 {/* Mobile Auth Buttons */}
                 {!user ? (
                   <div className="flex flex-col space-y-2 pt-4 border-t border-gray-200">
                     <button
                       onClick={() => {
-                        handleAuthClick('login');
+                        handleAuthClick("login");
                         setIsMenuOpen(false);
                       }}
                       className="text-left text-gray-700 hover:text-orange-500 font-medium transition-colors"
@@ -205,7 +213,7 @@ const Header: React.FC = () => {
                     </button>
                     <button
                       onClick={() => {
-                        handleAuthClick('signup');
+                        handleAuthClick("signup");
                         setIsMenuOpen(false);
                       }}
                       className="text-left bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
@@ -221,7 +229,8 @@ const Header: React.FC = () => {
                           <User size={16} className="text-white" />
                         </div>
                         <span className="font-medium text-gray-700">
-                          {user.user_metadata?.name || user.email?.split('@')[0]}
+                          {user.user_metadata?.name ||
+                            user.email?.split("@")[0]}
                         </span>
                       </div>
                       <button
@@ -236,9 +245,9 @@ const Header: React.FC = () => {
                     </div>
                   </div>
                 )}
-                
+
                 <a
-                  href="https://wa.me/+918374237713"
+                  href="https://wa.me/+919550607240"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center space-x-2 text-green-600 font-medium"
@@ -259,10 +268,7 @@ const Header: React.FC = () => {
         initialMode={authMode}
       />
 
-      <CartSlider
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-      />
+      <CartSlider isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
 
       <SearchModal
         isOpen={isSearchOpen}

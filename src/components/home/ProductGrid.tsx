@@ -1,8 +1,13 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { ShoppingCart, MessageCircle, Loader2, AlertCircle } from 'lucide-react';
-import { useProducts } from '../../hooks/useProducts';
-import { useCart } from '../../hooks/useCart';
+import React from "react";
+import { Link } from "react-router-dom";
+import {
+  ShoppingCart,
+  MessageCircle,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
+import { useProducts } from "../../hooks/useProducts";
+import { useCart } from "../../hooks/useCart";
 
 const ProductGrid: React.FC = () => {
   const { products, loading, error } = useProducts();
@@ -16,7 +21,7 @@ const ProductGrid: React.FC = () => {
 
   const getWhatsAppLink = (product: any) => {
     const message = `Hi! I'm interested in ${product.name} (${product.weight}). Please share more details.`;
-    const phoneNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '+918374237713';
+    const phoneNumber = import.meta.env.VITE_WHATSAPP_NUMBER || "+919550607240";
     return `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
   };
 
@@ -25,8 +30,12 @@ const ProductGrid: React.FC = () => {
       <section className="py-12">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">Premium Rice Collection</h2>
-            <p className="text-gray-600">Fresh, quality rice delivered to your doorstep</p>
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">
+              Premium Rice Collection
+            </h2>
+            <p className="text-gray-600">
+              Fresh, quality rice delivered to your doorstep
+            </p>
           </div>
           <div className="flex justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
@@ -42,7 +51,9 @@ const ProductGrid: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="text-center">
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">Failed to load products</h3>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+              Failed to load products
+            </h3>
             <p className="text-gray-600">{error}</p>
           </div>
         </div>
@@ -65,7 +76,8 @@ const ProductGrid: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8">
           {products.slice(0, 6).map((product) => {
             const isInStock = product.available_quantity > 0;
-            const price = product.price_slabs?.[0]?.price_per_bag || product.base_price;
+            const price =
+              product.price_slabs?.[0]?.price_per_bag || product.base_price;
 
             return (
               <div
@@ -77,11 +89,15 @@ const ProductGrid: React.FC = () => {
                   <img
                     src={product.image}
                     alt={product.name}
+                    loading="lazy"
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                  <span className={`absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-medium ${isInStock ? 'bg-green-500' : 'bg-red-500'
-                    } text-white`}>
-                    {isInStock ? 'In Stock' : 'Out of Stock'}
+                  <span
+                    className={`absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-medium ${
+                      isInStock ? "bg-green-500" : "bg-red-500"
+                    } text-white`}
+                  >
+                    {isInStock ? "In Stock" : "Out of Stock"}
                   </span>
                 </div>
 
@@ -91,7 +107,9 @@ const ProductGrid: React.FC = () => {
                     <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-1">
                       {product.name}
                     </h3>
-                    <p className="text-sm text-gray-600 line-clamp-2 mb-3">{product.description}</p>
+                    <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                      {product.description}
+                    </p>
 
                     <div className="flex items-center justify-between text-sm mb-4">
                       <span className="text-orange-500 font-semibold text-base sm:text-lg">
@@ -103,7 +121,9 @@ const ProductGrid: React.FC = () => {
                     {/* Price Slabs */}
                     {product.price_slabs?.length > 0 && (
                       <div className="mb-4">
-                        <p className="text-xs text-gray-500 mb-1">Bulk discounts available:</p>
+                        <p className="text-xs text-gray-500 mb-1">
+                          Bulk discounts available:
+                        </p>
                         <div className="flex flex-wrap gap-2 text-xs">
                           {product.price_slabs.slice(0, 2).map((slab, idx) => (
                             <span
@@ -129,8 +149,11 @@ const ProductGrid: React.FC = () => {
                     <button
                       onClick={() => handleQuickAdd(product)}
                       disabled={!product.price_slabs?.length || !isInStock}
-                      className={`p-2 rounded-lg ${!isInStock ? 'bg-gray-200' : 'bg-gray-100 hover:bg-gray-200'
-                        } transition-colors`}
+                      className={`p-2 rounded-lg ${
+                        !isInStock
+                          ? "bg-gray-200"
+                          : "bg-gray-100 hover:bg-gray-200"
+                      } transition-colors`}
                       title="Quick Add to Cart"
                     >
                       <ShoppingCart size={18} />

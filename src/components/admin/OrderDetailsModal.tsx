@@ -1,9 +1,23 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { X, Printer, MapPin, Package, CreditCard, Clock, User, Phone, Mail, FileText, Truck, Tag, Weight } from 'lucide-react';
-import { Order } from '../../types';
-import { Link } from 'react-router-dom';
-import LocationMarker from '../location/LocationMarker';
-import SuggestedVehicleCard from '../SuggestedVehicleCard';
+import React, { useEffect, useRef, useState } from "react";
+import {
+  X,
+  Printer,
+  MapPin,
+  Package,
+  CreditCard,
+  Clock,
+  User,
+  Phone,
+  Mail,
+  FileText,
+  Truck,
+  Tag,
+  Weight,
+} from "lucide-react";
+import { Order } from "../../types";
+import { Link } from "react-router-dom";
+import LocationMarker from "../location/LocationMarker";
+import SuggestedVehicleCard from "../SuggestedVehicleCard";
 
 interface OrderDetailsModalProps {
   isOpen: boolean;
@@ -12,30 +26,33 @@ interface OrderDetailsModalProps {
   order: Order | null;
 }
 
-export type payment_status_type = 'pending' | 'partial' | 'completed';
+export type payment_status_type = "pending" | "partial" | "completed";
 
-const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onChangePaymentStatus, onClose, order }) => {
+const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
+  isOpen,
+  onChangePaymentStatus,
+  onClose,
+  order,
+}) => {
   const printRef = useRef<HTMLDivElement>(null);
-  const [fetchVehicleLoading, setFetchVehicleLoading] = useState<boolean>(false);
+  const [fetchVehicleLoading, setFetchVehicleLoading] =
+    useState<boolean>(false);
   const [suggestedVehicle, setSuggestedVehicle] = useState(null);
-
-
 
   const totalWeight = order?.order_items?.reduce((total, item) => {
     const weight = parseInt(item.products?.weight.replace("kg", "")) || 0;
-    return total + (item.quantity * weight);
+    return total + item.quantity * weight;
   }, 0);
 
   useEffect(() => {
     const fetchSuggestedVehicle = async () => {
       if (!isOpen || !order) return null;
 
-
       setFetchVehicleLoading(true);
 
       const totalWeight = order.order_items?.reduce((total, item) => {
         const weight = parseInt(item.products?.weight.replace("kg", "")) || 0;
-        return total + (item.quantity * weight);
+        return total + item.quantity * weight;
       }, 0);
 
       const queryParams = new URLSearchParams({
@@ -44,14 +61,16 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onChangeP
         weight: totalWeight.toString(),
       });
 
-      const url = `${import.meta.env.VITE_PORTER_SERVER_URL}/fare-estimate?${queryParams}`;
+      const url = `${
+        import.meta.env.VITE_PORTER_SERVER_URL
+      }/fare-estimate?${queryParams}`;
 
       try {
         const result = await fetch(url, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json; charset=utf-8'
-          }
+            "Content-Type": "application/json; charset=utf-8",
+          },
         });
 
         if (result.ok) {
@@ -61,7 +80,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onChangeP
           setSuggestedVehicle(null);
         }
       } catch (error) {
-        console.error('Error fetching fare estimate:', error);
+        console.error("Error fetching fare estimate:", error);
         setSuggestedVehicle(null);
       } finally {
         setFetchVehicleLoading(false);
@@ -71,16 +90,13 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onChangeP
     fetchSuggestedVehicle();
   }, [order, isOpen]);
 
-
   if (!isOpen || !order) return null;
-
-
 
   const handlePrint = () => {
     const printContent = printRef.current;
     if (!printContent) return;
 
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
     printWindow.document.write(`
@@ -331,53 +347,60 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onChangeP
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
-      case 'pending':
-        return 'status-pending';
-      case 'prepaid':
-      case 'fully_paid':
-        return 'status-prepaid';
-      case 'dispatched':
-        return 'status-dispatched';
-      case 'delivered':
-        return 'status-delivered';
-      case 'cancelled':
-        return 'status-cancelled';
+      case "pending":
+        return "status-pending";
+      case "prepaid":
+      case "fully_paid":
+        return "status-prepaid";
+      case "dispatched":
+        return "status-dispatched";
+      case "delivered":
+        return "status-delivered";
+      case "cancelled":
+        return "status-cancelled";
       default:
-        return 'status-pending';
+        return "status-pending";
     }
   };
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'pending':
-        return 'Payment Pending';
-      case 'prepaid':
-        return 'Partially Paid';
-      case 'fully_paid':
-        return 'Fully Paid';
-      case 'dispatched':
-        return 'Dispatched';
-      case 'delivered':
-        return 'Delivered';
-      case 'cancelled':
-        return 'Cancelled';
+      case "pending":
+        return "Payment Pending";
+      case "prepaid":
+        return "Partially Paid";
+      case "fully_paid":
+        return "Fully Paid";
+      case "dispatched":
+        return "Dispatched";
+      case "delivered":
+        return "Delivered";
+      case "cancelled":
+        return "Cancelled";
       default:
         return status;
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const calculateSubtotal = () => {
-    return order.subtotal_amount || order.order_items?.reduce((sum, item) => sum + (item.price_per_bag * item.quantity), 0) || 0;
+    return (
+      order.subtotal_amount ||
+      order.order_items?.reduce(
+        (sum, item) => sum + item.price_per_bag * item.quantity,
+        0
+      ) ||
+      0
+    );
   };
 
   return (
@@ -410,12 +433,15 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onChangeP
         <div className="overflow-y-auto max-h-[calc(95vh-80px)]">
           <div ref={printRef} className="print-container">
             {/* Print Header (only visible in print) */}
-            <div className="header" style={{ display: 'none' }}>
+            <div className="header" style={{ display: "none" }}>
               <div className="company-name">Sri Vijaya Lakshmi Agency</div>
-              <div className="company-tagline">Premium Rice Delivery Service</div>
+              <div className="company-tagline">
+                Premium Rice Delivery Service
+              </div>
               <div className="company-contact">
-                📍 New Hafeezpet, Marthanda Nagar, Hyderabad, Telangana - 500049<br />
-                📞 +91 8374237713 | 📧 contact@srivijayalakshmirice.in
+                📍 New Hafeezpet, Marthanda Nagar, Hyderabad, Telangana - 500049
+                <br />
+                📞 +91 9550607240 | 📧 contact@svlrice.in
               </div>
             </div>
 
@@ -441,8 +467,12 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onChangeP
                     <div className="order-amount text-3xl font-bold text-orange-500 mb-2">
                       ₹{order.total_amount.toLocaleString()}
                     </div>
-                    <span className={`status-badge ${getStatusBadgeClass(order.order_status)}`}>
-                      {getStatusText(order.order_status)}
+                    <span
+                      className={`status-badge ${getStatusBadgeClass(
+                        order.payment_status
+                      )}`}
+                    >
+                      {getStatusText(order.payment_status)}
                     </span>
                   </div>
                 </div>
@@ -453,7 +483,9 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onChangeP
                 <h4 className="section-title">Order Information</h4>
                 <div className="info-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                   <div className="info-item bg-gray-50 p-4 rounded-lg">
-                    <div className="info-label text-xs font-semibold text-gray-500 uppercase mb-1">Order Type</div>
+                    <div className="info-label text-xs font-semibold text-gray-500 uppercase mb-1">
+                      Order Type
+                    </div>
                     <div className="info-value flex items-center">
                       <Package size={16} className="mr-2 text-orange-500" />
                       <span className="capitalize">{order.order_type}</span>
@@ -461,35 +493,41 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onChangeP
                   </div>
 
                   <div className="info-item bg-gray-50 p-4 rounded-lg">
-                    <div className="info-label text-xs font-semibold text-gray-500 uppercase mb-1">Payment Status</div>
+                    <div className="info-label text-xs font-semibold text-gray-500 uppercase mb-1">
+                      Payment Status
+                    </div>
                     <div className="info-value flex items-center">
                       <CreditCard size={16} className="mr-2 text-blue-500" />
                       <select
                         value={order.payment_status}
                         onChange={(e) => {
                           onChangePaymentStatus(order.id, e.target.value);
-                        }
-                        }
+                        }}
                         className="text-sm border border-gray-300 rounded px-2 py-1 min-w-[120px]"
                       >
                         <option value="pending">Pending</option>
                         <option value="partial">Partial</option>
                         <option value="completed">Completed</option>
-
                       </select>
                     </div>
                   </div>
 
                   <div className="info-item bg-gray-50 p-4 rounded-lg">
-                    <div className="info-label text-xs font-semibold text-gray-500 uppercase mb-1">Customer Type</div>
+                    <div className="info-label text-xs font-semibold text-gray-500 uppercase mb-1">
+                      Customer Type
+                    </div>
                     <div className="info-value flex items-center">
                       <User size={16} className="mr-2 text-green-500" />
-                      <span>{order.user_id ? 'Registered User' : 'Guest Customer'}</span>
+                      <span>
+                        {order.user_id ? "Registered User" : "Guest Customer"}
+                      </span>
                     </div>
                   </div>
 
                   <div className="info-item bg-gray-50 p-4 rounded-lg">
-                    <div className="info-label text-xs font-semibold text-gray-500 uppercase mb-1">Items Count</div>
+                    <div className="info-label text-xs font-semibold text-gray-500 uppercase mb-1">
+                      Items Count
+                    </div>
                     <div className="info-value flex items-center">
                       <Package size={16} className="mr-2 text-purple-500" />
                       <span>{order.order_items?.length || 0} items</span>
@@ -501,8 +539,12 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onChangeP
                   <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                     <div className="flex items-center">
                       <FileText size={16} className="mr-2 text-blue-500" />
-                      <span className="font-semibold text-blue-800">GST Number: </span>
-                      <span className="text-blue-700 ml-1">{order.gst_number}</span>
+                      <span className="font-semibold text-blue-800">
+                        GST Number:{" "}
+                      </span>
+                      <span className="text-blue-700 ml-1">
+                        {order.gst_number}
+                      </span>
                     </div>
                   </div>
                 )}
@@ -516,9 +558,13 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onChangeP
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <Tag size={16} className="text-green-600" />
-                        <span className="font-semibold text-green-800">Coupon Code: {order.coupon_code}</span>
+                        <span className="font-semibold text-green-800">
+                          Coupon Code: {order.coupon_code}
+                        </span>
                       </div>
-                      <span className="font-bold text-green-800">-₹{order.coupon_discount}</span>
+                      <span className="font-bold text-green-800">
+                        -₹{order.coupon_discount}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -531,12 +577,18 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onChangeP
                   <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <div className="flex items-center">
                       <Truck size={16} className="mr-2 text-yellow-600" />
-                      <span className="font-semibold text-yellow-800">Transportation Required</span>
+                      <span className="font-semibold text-yellow-800">
+                        Transportation Required
+                      </span>
                       {order.transportation_amount && (
-                        <span className="ml-auto font-bold text-yellow-800">₹{order.transportation_amount}</span>
+                        <span className="ml-auto font-bold text-yellow-800">
+                          ₹{order.transportation_amount}
+                        </span>
                       )}
                     </div>
-                    <p className="text-yellow-700 text-sm mt-1">Additional transportation assistance requested</p>
+                    <p className="text-yellow-700 text-sm mt-1">
+                      Additional transportation assistance requested
+                    </p>
                   </div>
                 </div>
               )}
@@ -548,12 +600,24 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onChangeP
                   <table className="items-table w-full">
                     <thead>
                       <tr className="bg-gray-50">
-                        <th className="text-left p-3 font-semibold text-gray-700">Product</th>
-                        <th className="text-left p-3 font-semibold text-gray-700">Weight</th>
-                        <th className="text-left p-3 font-semibold text-gray-700">Slab</th>
-                        <th className="text-center p-3 font-semibold text-gray-700">Quantity</th>
-                        <th className="text-right p-3 font-semibold text-gray-700">Price/Bag</th>
-                        <th className="text-right p-3 font-semibold text-gray-700">Total</th>
+                        <th className="text-left p-3 font-semibold text-gray-700">
+                          Product
+                        </th>
+                        <th className="text-left p-3 font-semibold text-gray-700">
+                          Weight
+                        </th>
+                        <th className="text-left p-3 font-semibold text-gray-700">
+                          Slab
+                        </th>
+                        <th className="text-center p-3 font-semibold text-gray-700">
+                          Quantity
+                        </th>
+                        <th className="text-right p-3 font-semibold text-gray-700">
+                          Price/Bag
+                        </th>
+                        <th className="text-right p-3 font-semibold text-gray-700">
+                          Total
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -569,21 +633,34 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onChangeP
                                 />
                               )}
                               <div>
-                                <div className="font-semibold text-gray-800">{item.products?.name}</div>
-                                <div className="text-sm text-gray-600">{item.products?.category}</div>
+                                <div className="font-semibold text-gray-800">
+                                  {item.products?.name}
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                  {item.products?.category}
+                                </div>
                               </div>
                             </div>
                           </td>
-                          <td className="p-3 text-gray-600">{item.products?.weight}</td>
+                          <td className="p-3 text-gray-600">
+                            {item.products?.weight}
+                          </td>
                           <td className="p-3">
                             <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs font-medium">
                               {item.slab_label}
                             </span>
                           </td>
-                          <td className="p-3 text-center font-semibold">{item.quantity}</td>
-                          <td className="p-3 text-right font-semibold">₹{item.price_per_bag.toLocaleString()}</td>
+                          <td className="p-3 text-center font-semibold">
+                            {item.quantity}
+                          </td>
+                          <td className="p-3 text-right font-semibold">
+                            ₹{item.price_per_bag.toLocaleString()}
+                          </td>
                           <td className="p-3 text-right font-bold text-orange-600">
-                            ₹{(item.price_per_bag * item.quantity).toLocaleString()}
+                            ₹
+                            {(
+                              item.price_per_bag * item.quantity
+                            ).toLocaleString()}
                           </td>
                         </tr>
                       ))}
@@ -601,43 +678,64 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onChangeP
 
                     <div className="total-row flex flex-col sm:flex-row justify-between gap-1">
                       <span className="text-gray-600">Subtotal:</span>
-                      <span className="font-semibold">₹{calculateSubtotal().toLocaleString()}</span>
+                      <span className="font-semibold">
+                        ₹{calculateSubtotal().toLocaleString()}
+                      </span>
                     </div>
 
-                    {order.coupon_code && order.coupon_discount && order.coupon_discount > 0 && (
-                      <div className="total-row flex flex-col sm:flex-row justify-between text-green-600 gap-1">
-                        <span>Coupon Discount ({order.coupon_code}):</span>
-                        <span className="font-semibold">-₹{order.coupon_discount.toLocaleString()}</span>
-                      </div>
-                    )}
+                    {order.coupon_code &&
+                      order.coupon_discount &&
+                      order.coupon_discount > 0 && (
+                        <div className="total-row flex flex-col sm:flex-row justify-between text-green-600 gap-1">
+                          <span>Coupon Discount ({order.coupon_code}):</span>
+                          <span className="font-semibold">
+                            -₹{order.coupon_discount.toLocaleString()}
+                          </span>
+                        </div>
+                      )}
 
-                    {order.transportation_required && order.transportation_amount && (
-                      <div className="total-row flex flex-col sm:flex-row justify-between gap-1">
-                        <span className="text-gray-600">Transportation:</span>
-                        <span className="font-semibold">₹{order.transportation_amount?.toLocaleString()}</span>
-                      </div>
-                    )}
+                    {order.transportation_required &&
+                      order.transportation_amount && (
+                        <div className="total-row flex flex-col sm:flex-row justify-between gap-1">
+                          <span className="text-gray-600">Transportation:</span>
+                          <span className="font-semibold">
+                            ₹{order.transportation_amount?.toLocaleString()}
+                          </span>
+                        </div>
+                      )}
 
                     <div className="total-row final flex flex-col sm:flex-row justify-between border-t-2 border-gray-300 pt-3 gap-1">
                       <span className="text-lg font-bold">Total Amount:</span>
-                      <span className="text-2xl font-bold text-orange-600">₹{order.total_amount.toLocaleString()}</span>
+                      <span className="text-2xl font-bold text-orange-600">
+                        ₹{order.total_amount.toLocaleString()}
+                      </span>
                     </div>
 
-                    {order.order_type === 'preorder' && order.payment_status === 'partial' && (
-                      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2 text-sm">
-                        <div className="flex flex-col sm:flex-row justify-between">
-                          <span>Amount Paid:</span>
-                          <span className="font-semibold">₹{Math.ceil(order.total_amount / 2).toLocaleString()}</span>
+                    {order.order_type === "preorder" &&
+                      order.payment_status === "partial" && (
+                        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2 text-sm">
+                          <div className="flex flex-col sm:flex-row justify-between">
+                            <span>Amount Paid:</span>
+                            <span className="font-semibold">
+                              ₹
+                              {Math.ceil(
+                                order.total_amount / 2
+                              ).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex flex-col sm:flex-row justify-between">
+                            <span>Remaining:</span>
+                            <span className="font-semibold">
+                              ₹
+                              {Math.floor(
+                                order.total_amount / 2
+                              ).toLocaleString()}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex flex-col sm:flex-row justify-between">
-                          <span>Remaining:</span>
-                          <span className="font-semibold">₹{Math.floor(order.total_amount / 2).toLocaleString()}</span>
-                        </div>
-                      </div>
-                    )}
+                      )}
                   </div>
                 </div>
-
               </div>
 
               {/* Delivery Address */}
@@ -650,21 +748,30 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onChangeP
                   href={`geo:${order.delivery_address.coordinates?.lat},${order.delivery_address.coordinates?.lng}?q=${order.delivery_address.coordinates?.lat},${order.delivery_address.coordinates?.lng}(Drop)`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-primary-500 rounded-lg flex items-center text-white px-3 py-2 justify-center overflow-hidden hover:bg-primary-600 ">
+                  className="bg-primary-500 rounded-lg flex items-center text-white px-3 py-2 justify-center overflow-hidden hover:bg-primary-600 "
+                >
                   Book Porter
                 </a>
-                <LocationMarker coordinates={order.delivery_address.coordinates} />
+                <LocationMarker
+                  coordinates={order.delivery_address.coordinates}
+                />
                 <div className="address-block bg-gray-50 rounded-lg p-4">
                   <div className="text-gray-800">
-                    <p className="font-semibold mb-2">{order.delivery_address.fullAddress}</p>
+                    <p className="font-semibold mb-2">
+                      {order.delivery_address.fullAddress}
+                    </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="font-medium text-gray-600">Pincode: </span>
+                        <span className="font-medium text-gray-600">
+                          Pincode:{" "}
+                        </span>
                         <span>{order.delivery_address.pincode}</span>
                       </div>
                       {order.delivery_address.landmark && (
                         <div>
-                          <span className="font-medium text-gray-600">Landmark: </span>
+                          <span className="font-medium text-gray-600">
+                            Landmark:{" "}
+                          </span>
                           <span>{order.delivery_address.landmark}</span>
                         </div>
                       )}
@@ -673,22 +780,35 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onChangeP
                 </div>
               </div>
 
-              <SuggestedVehicleCard vehicle={suggestedVehicle} loading={fetchVehicleLoading} />
+              <SuggestedVehicleCard
+                vehicle={suggestedVehicle}
+                loading={fetchVehicleLoading}
+              />
 
               {/* Payment Information */}
               <div className="section">
                 <h4 className="section-title">Payment Information</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="info-item bg-gray-50 p-4 rounded-lg">
-                    <div className="info-label text-xs font-semibold text-gray-500 uppercase mb-1">Payment Id</div>
-                    <Link to={`https://business.phonepe.com/transactions/details/${order.transaction?.transaction_utr}`} target='_blank'
-                      className="info-value font-mono text-sm break-all text-blue-500 hover:text-blue-600 hover:underline">
-                      {order.transaction?.transaction_utr}</Link>
+                    <div className="info-label text-xs font-semibold text-gray-500 uppercase mb-1">
+                      Payment Id
+                    </div>
+                    <Link
+                      to={`https://business.phonepe.com/transactions/details/${order.transaction?.transaction_utr}`}
+                      target="_blank"
+                      className="info-value font-mono text-sm break-all text-blue-500 hover:text-blue-600 hover:underline"
+                    >
+                      {order.transaction?.transaction_utr}
+                    </Link>
                   </div>
                   <div className="info-item bg-gray-50 p-4 rounded-lg">
-                    <div className="info-label text-xs font-semibold text-gray-500 uppercase mb-1">Amount</div>
+                    <div className="info-label text-xs font-semibold text-gray-500 uppercase mb-1">
+                      Amount
+                    </div>
                     <div className="info-value">
-                      <div className="info-value font-mono text-sm break-all">₹ {order.transaction?.amount}</div>
+                      <div className="info-value font-mono text-sm break-all">
+                        ₹ {order.transaction?.amount}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -699,22 +819,32 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onChangeP
                 <h4 className="section-title">Timeline</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="info-item bg-gray-50 p-4 rounded-lg">
-                    <div className="info-label text-xs font-semibold text-gray-500 uppercase mb-1">Order At</div>
-                    <div className="info-value">{formatDate(order.created_at)}</div>
+                    <div className="info-label text-xs font-semibold text-gray-500 uppercase mb-1">
+                      Order At
+                    </div>
+                    <div className="info-value">
+                      {formatDate(order.created_at)}
+                    </div>
                   </div>
                   <div className="info-item bg-gray-50 p-4 rounded-lg">
-                    <div className="info-label text-xs font-semibold text-gray-500 uppercase mb-1">Payment At</div>
-                    <div className="info-value">{formatDate(order.transaction?.processed_at)}</div>
+                    <div className="info-label text-xs font-semibold text-gray-500 uppercase mb-1">
+                      Payment At
+                    </div>
+                    <div className="info-value">
+                      {formatDate(order.transaction?.processed_at)}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Print Footer (only visible in print) */}
-            <div className="footer" style={{ display: 'none' }}>
+            <div className="footer" style={{ display: "none" }}>
               <p>Thank you for choosing Sri Vijaya Lakshmi Agency!</p>
-              <p>For support, contact us at +91 8374237713 or contact@srivijayalakshmirice.in</p>
-              <p style={{ marginTop: '10px', fontSize: '10px' }}>
+              <p>
+                For support, contact us at +91 9550607240 or contact@svlrice.in
+              </p>
+              <p style={{ marginTop: "10px", fontSize: "10px" }}>
                 This is a computer-generated document. No signature required.
               </p>
             </div>
