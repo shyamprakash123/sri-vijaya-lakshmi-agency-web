@@ -3,16 +3,15 @@ import { Link, useLocation } from "react-router-dom";
 import { ShoppingCart, Menu, User, Phone, Search, LogOut } from "lucide-react";
 import { useCart } from "../../hooks/useCart";
 import { useAuth } from "../../hooks/useAuth";
-import { useToast } from "../../hooks/useToast";
 import AuthModal from "../auth/AuthModal";
 import CartSlider from "../cart/CartSlider";
 import SearchModal from "./SearchModal";
+import toast from "react-hot-toast";
 
 const Header: React.FC = () => {
   const location = useLocation();
   const { getTotalItems } = useCart();
   const { user, signOut } = useAuth();
-  const { success } = useToast();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
@@ -35,9 +34,8 @@ const Header: React.FC = () => {
   const handleSignOut = async () => {
     try {
       await signOut();
-      success(
-        "Signed out successfully",
-        "You have been logged out of your account."
+      toast.success(
+        "Signed out successfully, You have been logged out of your account."
       );
     } catch (error) {
       console.error("Sign out error:", error);
