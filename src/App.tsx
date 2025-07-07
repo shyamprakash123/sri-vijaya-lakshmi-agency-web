@@ -21,6 +21,7 @@ import ShippingPolicy from "./pages/policies/ShippingPolicy";
 import ScrollToTop from "./components/ui/ScrollToTop";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import LoginToContinue from "./pages/LoginToContinue";
+import NotFoundPage from "./pages/NotFoundPage";
 
 function App() {
   return (
@@ -80,7 +81,8 @@ function App() {
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/shipping-policy" element={<ShippingPolicy />} />
-              <Route path="*" element={<LoginToContinue />} />
+              <Route path="/login" element={<LoginToContinue />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>
           <Footer />
