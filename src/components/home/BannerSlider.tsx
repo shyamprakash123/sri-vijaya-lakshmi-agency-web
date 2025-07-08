@@ -58,8 +58,10 @@ const BannerSlider: React.FC = () => {
       {banners.map((banner, index) => (
         <div
           key={banner.id}
-          className={`absolute inset-0 transition-opacity duration-500 ${
-            index === currentSlide ? "opacity-100" : "opacity-0"
+          className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+            index === currentSlide
+              ? "opacity-100 z-10"
+              : "opacity-0 pointer-events-none z-0"
           }`}
         >
           <div className="relative h-full">
@@ -82,7 +84,7 @@ const BannerSlider: React.FC = () => {
                 {banner.link && (
                   <Link
                     to={banner.link}
-                    className="inline-block bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-full font-semibold transition-colors transform hover:scale-105"
+                    className="z-20 inline-block bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-full font-semibold transition-colors transform hover:scale-105"
                   >
                     Shop Now
                   </Link>
@@ -98,19 +100,19 @@ const BannerSlider: React.FC = () => {
           {/* Navigation Arrows */}
           <button
             onClick={prevSlide}
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-2 rounded-full transition-all"
+            className="z-20 absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-2 rounded-full transition-all"
           >
             <ChevronLeft size={24} />
           </button>
           <button
             onClick={nextSlide}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-2 rounded-full transition-all"
+            className="z-20 absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-2 rounded-full transition-all"
           >
             <ChevronRight size={24} />
           </button>
 
           {/* Dots Indicator */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+          <div className="z-20 absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
             {banners.map((_, index) => (
               <button
                 key={index}

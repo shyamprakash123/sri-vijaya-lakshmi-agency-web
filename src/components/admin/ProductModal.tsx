@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { X, Loader2, Plus, Trash2 } from 'lucide-react';
-import { Product, PriceSlab } from '../../types';
-import ImageUpload from '../ui/ImageUpload';
-import toast from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import { X, Loader2, Plus, Trash2 } from "lucide-react";
+import { Product, PriceSlab } from "../../types";
+import ImageUpload from "../ui/ImageUpload";
+import toast from "react-hot-toast";
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -17,22 +17,39 @@ const ProductModal: React.FC<ProductModalProps> = ({
   onClose,
   onSave,
   product,
-  loading = false
+  loading = false,
 }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    image: '',
-    base_price: '',
-    available_quantity: '',
-    weight: '',
-    category: '',
-    is_active: true
+    name: "",
+    description: "",
+    image: "",
+    base_price: "",
+    available_quantity: "",
+    weight: "",
+    category: "",
+    is_active: true,
   });
-  const [priceSlabs, setPriceSlabs] = useState<Omit<PriceSlab, 'id' | 'product_id'>[]>([
-    { min_quantity: 1, max_quantity: 5, price_per_bag: 0, label: 'Small (1-5 bags)' },
-    { min_quantity: 6, max_quantity: 20, price_per_bag: 0, label: 'Medium (6-20 bags)' },
-    { min_quantity: 21, max_quantity: null, price_per_bag: 0, label: 'Bulk (21+ bags)' }
+  const [priceSlabs, setPriceSlabs] = useState<
+    Omit<PriceSlab, "id" | "product_id">[]
+  >([
+    {
+      min_quantity: 1,
+      max_quantity: 5,
+      price_per_bag: 0,
+      label: "Small (1-5 bags)",
+    },
+    {
+      min_quantity: 6,
+      max_quantity: 20,
+      price_per_bag: 0,
+      label: "Medium (6-20 bags)",
+    },
+    {
+      min_quantity: 21,
+      max_quantity: null,
+      price_per_bag: 0,
+      label: "Bulk (21+ bags)",
+    },
   ]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -46,107 +63,140 @@ const ProductModal: React.FC<ProductModalProps> = ({
         available_quantity: product.available_quantity.toString(),
         weight: product.weight,
         category: product.category,
-        is_active: product.is_active
+        is_active: product.is_active,
       });
 
       if (product.price_slabs && product.price_slabs.length > 0) {
-        setPriceSlabs(product.price_slabs.map(slab => ({
-          min_quantity: slab.min_quantity,
-          max_quantity: slab.max_quantity,
-          price_per_bag: slab.price_per_bag,
-          label: slab.label
-        })));
+        setPriceSlabs(
+          product.price_slabs.map((slab) => ({
+            min_quantity: slab.min_quantity,
+            max_quantity: slab.max_quantity,
+            price_per_bag: slab.price_per_bag,
+            label: slab.label,
+          }))
+        );
       }
     } else {
       setFormData({
-        name: '',
-        description: '',
-        image: '',
-        base_price: '',
-        available_quantity: '',
-        weight: '',
-        category: '',
-        is_active: true
+        name: "",
+        description: "",
+        image: "",
+        base_price: "",
+        available_quantity: "",
+        weight: "",
+        category: "",
+        is_active: true,
       });
       setPriceSlabs([
-        { min_quantity: 1, max_quantity: 5, price_per_bag: 0, label: 'Small (1-5 bags)' },
-        { min_quantity: 6, max_quantity: 20, price_per_bag: 0, label: 'Medium (6-20 bags)' },
-        { min_quantity: 21, max_quantity: null, price_per_bag: 0, label: 'Bulk (21+ bags)' }
+        {
+          min_quantity: 1,
+          max_quantity: 5,
+          price_per_bag: 0,
+          label: "Small (1-5 bags)",
+        },
+        {
+          min_quantity: 6,
+          max_quantity: 20,
+          price_per_bag: 0,
+          label: "Medium (6-20 bags)",
+        },
+        {
+          min_quantity: 21,
+          max_quantity: null,
+          price_per_bag: 0,
+          label: "Bulk (21+ bags)",
+        },
       ]);
     }
     setErrors({});
   }, [product, isOpen]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value, type } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      [name]:
+        type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
     }));
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
-  const handleSlabChange = (index: number, field: keyof Omit<PriceSlab, 'id' | 'product_id'>, value: any) => {
-    setPriceSlabs(prev => prev.map((slab, i) =>
-      i === index ? { ...slab, [field]: value } : slab
-    ));
+  const handleSlabChange = (
+    index: number,
+    field: keyof Omit<PriceSlab, "id" | "product_id">,
+    value: any
+  ) => {
+    setPriceSlabs((prev) =>
+      prev.map((slab, i) => (i === index ? { ...slab, [field]: value } : slab))
+    );
   };
 
   const handleImageUpload = (url: string[]) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      image: url[0]
+      image: url[0],
     }));
     toast.success(`${url.length} image(s) uploaded successfully!`);
   };
 
   const handleImageRemove = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      image: ""
+      image: "",
     }));
   };
 
   const addPriceSlab = () => {
-    setPriceSlabs(prev => [...prev, {
-      min_quantity: 1,
-      max_quantity: null,
-      price_per_bag: 0,
-      label: 'New Slab'
-    }]);
+    setPriceSlabs((prev) => [
+      ...prev,
+      {
+        min_quantity: 1,
+        max_quantity: null,
+        price_per_bag: 0,
+        label: "New Slab",
+      },
+    ]);
   };
 
   const removePriceSlab = (index: number) => {
-    setPriceSlabs(prev => prev.filter((_, i) => i !== index));
+    setPriceSlabs((prev) => prev.filter((_, i) => i !== index));
   };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.name.trim()) newErrors.name = 'Product name is required';
-    if (!formData.description.trim()) newErrors.description = 'Description is required';
-    if (!formData.image.trim()) newErrors.image = 'Image URL is required';
+    if (!formData.name.trim()) newErrors.name = "Product name is required";
+    if (!formData.description.trim())
+      newErrors.description = "Description is required";
+    if (!formData.image.trim()) newErrors.image = "Image URL is required";
     if (!formData.base_price || parseFloat(formData.base_price) <= 0) {
-      newErrors.base_price = 'Valid base price is required';
+      newErrors.base_price = "Valid base price is required";
     }
-    if (!formData.available_quantity || parseInt(formData.available_quantity) < 0) {
-      newErrors.available_quantity = 'Valid quantity is required';
+    if (
+      !formData.available_quantity ||
+      parseInt(formData.available_quantity) < 0
+    ) {
+      newErrors.available_quantity = "Valid quantity is required";
     }
-    if (!formData.weight.trim()) newErrors.weight = 'Weight is required';
-    if (!formData.category.trim()) newErrors.category = 'Category is required';
+    if (!formData.weight.trim()) newErrors.weight = "Weight is required";
+    if (!formData.category.trim()) newErrors.category = "Category is required";
 
     // Validate price slabs
     priceSlabs.forEach((slab, index) => {
       if (!slab.label.trim()) {
-        newErrors[`slab_${index}_label`] = 'Label is required';
+        newErrors[`slab_${index}_label`] = "Label is required";
       }
       if (slab.price_per_bag <= 0) {
-        newErrors[`slab_${index}_price`] = 'Valid price is required';
+        newErrors[`slab_${index}_price`] = "Valid price is required";
       }
       if (slab.min_quantity <= 0) {
-        newErrors[`slab_${index}_min`] = 'Valid minimum quantity is required';
+        newErrors[`slab_${index}_min`] = "Valid minimum quantity is required";
       }
     });
 
@@ -163,13 +213,13 @@ const ProductModal: React.FC<ProductModalProps> = ({
         ...formData,
         base_price: parseFloat(formData.base_price),
         available_quantity: parseInt(formData.available_quantity),
-        price_slabs: priceSlabs
+        price_slabs: priceSlabs,
       };
 
       await onSave(productData);
       onClose();
     } catch (error) {
-      console.error('Error saving product:', error);
+      console.error("Error saving product:", error);
     }
   };
 
@@ -180,7 +230,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-800">
-            {product ? 'Edit Product' : 'Add New Product'}
+            {product ? "Edit Product" : "Add New Product"}
           </h2>
           <button
             onClick={onClose}
@@ -204,7 +254,9 @@ const ProductModal: React.FC<ProductModalProps> = ({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                 placeholder="Enter product name"
               />
-              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+              {errors.name && (
+                <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+              )}
             </div>
 
             <div>
@@ -221,8 +273,11 @@ const ProductModal: React.FC<ProductModalProps> = ({
                 <option value="basmati">Basmati Rice</option>
                 <option value="regular">Regular Rice</option>
                 <option value="premium">Premium Rice</option>
+                <option value="hmt-rice">HMT Rice</option>
               </select>
-              {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category}</p>}
+              {errors.category && (
+                <p className="text-red-500 text-sm mt-1">{errors.category}</p>
+              )}
             </div>
 
             <div>
@@ -237,7 +292,9 @@ const ProductModal: React.FC<ProductModalProps> = ({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                 placeholder="e.g., 25kg bag"
               />
-              {errors.weight && <p className="text-red-500 text-sm mt-1">{errors.weight}</p>}
+              {errors.weight && (
+                <p className="text-red-500 text-sm mt-1">{errors.weight}</p>
+              )}
             </div>
 
             <div>
@@ -254,7 +311,9 @@ const ProductModal: React.FC<ProductModalProps> = ({
                 min="0"
                 step="0.01"
               />
-              {errors.base_price && <p className="text-red-500 text-sm mt-1">{errors.base_price}</p>}
+              {errors.base_price && (
+                <p className="text-red-500 text-sm mt-1">{errors.base_price}</p>
+              )}
             </div>
 
             <div>
@@ -270,14 +329,17 @@ const ProductModal: React.FC<ProductModalProps> = ({
                 placeholder="Enter quantity"
                 min="0"
               />
-              {errors.available_quantity && <p className="text-red-500 text-sm mt-1">{errors.available_quantity}</p>}
+              {errors.available_quantity && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.available_quantity}
+                </p>
+              )}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Product Image
               </label>
-
             </div>
             <ImageUpload
               onUpload={handleImageUpload}
@@ -301,12 +363,16 @@ const ProductModal: React.FC<ProductModalProps> = ({
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               placeholder="Enter product description"
             />
-            {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+            {errors.description && (
+              <p className="text-red-500 text-sm mt-1">{errors.description}</p>
+            )}
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Price Slabs</h3>
+              <h3 className="text-lg font-semibold text-gray-800">
+                Price Slabs
+              </h3>
               <button
                 type="button"
                 onClick={addPriceSlab}
@@ -319,57 +385,94 @@ const ProductModal: React.FC<ProductModalProps> = ({
 
             <div className="space-y-4">
               {priceSlabs.map((slab, index) => (
-                <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-3 p-4 bg-gray-50 rounded-lg">
+                <div
+                  key={index}
+                  className="grid grid-cols-1 md:grid-cols-5 gap-3 p-4 bg-gray-50 rounded-lg"
+                >
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Label</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Label
+                    </label>
                     <input
                       type="text"
                       value={slab.label}
-                      onChange={(e) => handleSlabChange(index, 'label', e.target.value)}
+                      onChange={(e) =>
+                        handleSlabChange(index, "label", e.target.value)
+                      }
                       className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-orange-500"
                     />
                     {errors[`slab_${index}_label`] && (
-                      <p className="text-red-500 text-xs mt-1">{errors[`slab_${index}_label`]}</p>
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors[`slab_${index}_label`]}
+                      </p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Min Qty</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Min Qty
+                    </label>
                     <input
                       type="number"
                       value={slab.min_quantity}
-                      onChange={(e) => handleSlabChange(index, 'min_quantity', parseInt(e.target.value))}
+                      onChange={(e) =>
+                        handleSlabChange(
+                          index,
+                          "min_quantity",
+                          parseInt(e.target.value)
+                        )
+                      }
                       className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-orange-500"
                       min="1"
                     />
                     {errors[`slab_${index}_min`] && (
-                      <p className="text-red-500 text-xs mt-1">{errors[`slab_${index}_min`]}</p>
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors[`slab_${index}_min`]}
+                      </p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Max Qty</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Max Qty
+                    </label>
                     <input
                       type="number"
-                      value={slab.max_quantity || ''}
-                      onChange={(e) => handleSlabChange(index, 'max_quantity', e.target.value ? parseInt(e.target.value) : null)}
+                      value={slab.max_quantity || ""}
+                      onChange={(e) =>
+                        handleSlabChange(
+                          index,
+                          "max_quantity",
+                          e.target.value ? parseInt(e.target.value) : null
+                        )
+                      }
                       className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-orange-500"
                       placeholder="No limit"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Price (₹)</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Price (₹)
+                    </label>
                     <input
                       type="number"
                       value={slab.price_per_bag}
-                      onChange={(e) => handleSlabChange(index, 'price_per_bag', parseFloat(e.target.value))}
+                      onChange={(e) =>
+                        handleSlabChange(
+                          index,
+                          "price_per_bag",
+                          parseFloat(e.target.value)
+                        )
+                      }
                       className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-orange-500"
                       min="0"
                       step="0.01"
                     />
                     {errors[`slab_${index}_price`] && (
-                      <p className="text-red-500 text-xs mt-1">{errors[`slab_${index}_price`]}</p>
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors[`slab_${index}_price`]}
+                      </p>
                     )}
                   </div>
 
@@ -417,7 +520,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
               {loading ? (
                 <Loader2 size={20} className="animate-spin" />
               ) : (
-                <span>{product ? 'Update Product' : 'Create Product'}</span>
+                <span>{product ? "Update Product" : "Create Product"}</span>
               )}
             </button>
           </div>

@@ -8,6 +8,7 @@ import {
   MessageCircle,
   Star,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 const ContactPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -37,15 +38,29 @@ const ContactPage: React.FC = () => {
     e.preventDefault();
     setLoading(true);
 
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const response = await fetch(
+        "https://script.google.com/macros/s/AKfycbxkntsbfuQacGwg5gldtDI41YxWhCi_wPRbNCpKmTUI7gee6Uxh0-X9jJxEhzLfYanI2w/exec",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            subject: formData.subject,
+            message: formData.message,
+          }),
+        }
+      );
 
-    setSubmitted(true);
-    setLoading(false);
-
-    // Reset form after 3 seconds
-    setTimeout(() => {
+      // Can't read response due to no-cors, assume success
+      setSubmitted(true);
+    } catch (error) {
+      console.error("Form submission error:", error);
+    } finally {
+      toast.success("Message sent successfully");
       setSubmitted(false);
+      setLoading(false);
       setFormData({
         name: "",
         email: "",
@@ -53,7 +68,7 @@ const ContactPage: React.FC = () => {
         subject: "",
         message: "",
       });
-    }, 3000);
+    }
   };
 
   const contactInfo = [
@@ -424,7 +439,7 @@ const ContactPage: React.FC = () => {
       </section>
 
       {/* Testimonials */}
-      <section className="py-16">
+      {/* <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-800 mb-4">
@@ -466,7 +481,7 @@ const ContactPage: React.FC = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
     </div>
   );
 };

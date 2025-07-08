@@ -8,10 +8,12 @@ import {
 } from "lucide-react";
 import { useProducts } from "../../hooks/useProducts";
 import { useCart } from "../../hooks/useCart";
+import { useNavigate } from "react-router-dom";
 
 const ProductGrid: React.FC = () => {
   const { products, loading, error } = useProducts();
   const { addToCart } = useCart();
+  const navigate = useNavigate();
 
   const handleQuickAdd = (product: any) => {
     if (product.price_slabs && product.price_slabs.length > 0) {
@@ -82,7 +84,8 @@ const ProductGrid: React.FC = () => {
             return (
               <div
                 key={product.id}
-                className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group flex flex-col"
+                className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group flex flex-col cursor-pointer"
+                onClick={() => navigate(`/product/${product.id}`)}
               >
                 {/* Image */}
                 <div className="relative h-48 sm:h-52 md:h-56 overflow-hidden">
@@ -90,7 +93,7 @@ const ProductGrid: React.FC = () => {
                     src={product.image}
                     alt={product.name}
                     loading="lazy"
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
                   />
                   <span
                     className={`absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-medium ${
@@ -147,7 +150,11 @@ const ProductGrid: React.FC = () => {
                       View Details
                     </Link>
                     <button
-                      onClick={() => handleQuickAdd(product)}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleQuickAdd(product);
+                      }}
                       disabled={!product.price_slabs?.length || !isInStock}
                       className={`p-2 rounded-lg ${
                         !isInStock
@@ -158,12 +165,14 @@ const ProductGrid: React.FC = () => {
                     >
                       <ShoppingCart size={18} />
                     </button>
+
                     <a
                       href={getWhatsAppLink(product)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-2 rounded-lg bg-green-500 hover:bg-green-600 text-white transition-colors"
                       title="Chat on WhatsApp"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <MessageCircle size={18} />
                     </a>
