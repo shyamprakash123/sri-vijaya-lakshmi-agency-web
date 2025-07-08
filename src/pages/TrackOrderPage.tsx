@@ -22,6 +22,41 @@ import { useOrders } from "../hooks/useOrders";
 import CancelOrderButton from "../components/ui/CancelOrderButton";
 import { LoaderIcon } from "react-hot-toast";
 
+function OrderExpiryCountdown({ createdAt }) {
+  const [timeLeft, setTimeLeft] = useState("");
+
+  useEffect(() => {
+    const expiryTime = new Date(createdAt).getTime() + 10 * 60 * 60 * 1000; // +10 hours
+
+    const updateCountdown = () => {
+      const now = Date.now();
+      const diff = expiryTime - now;
+
+      if (diff <= 0) {
+        setTimeLeft("Order Expired");
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setTimeLeft(
+        `Order expires in: ${String(hours).padStart(2, "0")}:${String(
+          minutes
+        ).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+      );
+    };
+
+    updateCountdown(); // Initial call
+    const interval = setInterval(updateCountdown, 1000); // Update every second
+
+    return () => clearInterval(interval); // Cleanup
+  }, [createdAt]);
+
+  return <p className="text-md text-red-600 font-medium">{timeLeft}</p>;
+}
+
 const TrackOrderPage: React.FC = () => {
   const { updateOrderStatus } = useOrders;
   const [orderId, setOrderId] = useState("");
@@ -30,6 +65,7 @@ const TrackOrderPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [loadingUserOrders, setLoadingUserOrders] = useState(false);
+  const [isExpired, setIsExpired] = useState(false);
 
   const { user } = useAuth();
 
@@ -38,6 +74,27 @@ const TrackOrderPage: React.FC = () => {
       fetchUserOrders();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!orderData) return;
+    const createdTime = new Date(orderData.created_at).getTime();
+    const expiryTime = createdTime + 10 * 60 * 60 * 1000; // 10 hours
+
+    const checkExpiry = () => {
+      const now = Date.now();
+      if (now >= expiryTime) {
+        setIsExpired(true);
+      }
+    };
+
+    // Check immediately
+    checkExpiry();
+
+    // Check every 30 seconds (adjust if needed)
+    const interval = setInterval(checkExpiry, 30000);
+
+    return () => clearInterval(interval);
+  }, [orderData?.created_at]);
 
   const fetchUserOrders = async () => {
     if (!user) return;
@@ -384,8 +441,13 @@ const TrackOrderPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
+                {orderData.payment_status === "pending" &&
+                  orderData.order_status !== "canceled" && (
+                    <OrderExpiryCountdown createdAt={orderData.created_at} />
+                  )}
               </div>
-              {(orderData.payment_status === "pending" ||
+
+              {((orderData.payment_status === "pending" && !isExpired) ||
                 orderData.payment_status === "partial") &&
                 orderData.order_status !== "canceled" && (
                   <PayNowSection
